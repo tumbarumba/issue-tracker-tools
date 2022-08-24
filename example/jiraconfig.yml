@@ -1,0 +1,30 @@
+jira:
+  url: https://url.of.jira/
+  statuses:
+  - name: Backlog
+    display: 🔵
+  - name: Selected for Development
+    display: 🌑
+  - name: Ready for Development
+    display: 🌘
+  - name: In Progress
+    display: 🌗
+  - name: In Review
+    display: 🌖
+  - name: Awaiting Merge
+    display: 🌕
+  - name: Awaiting Demo
+    display: 🔆
+  - name: Done
+    display: ✅
+  - name: Closed
+    display: C
+  - name: Duplicate
+    display: D
+  issuetypes:
+  - name: Story
+    display: 📖
+  - name: Bug
+    display: 🐞
+  - name: Task
+    display: 🔧

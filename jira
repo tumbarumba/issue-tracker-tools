@@ -1,0 +1,89 @@
+#! /usr/bin/env python
+import click
+import sys
+import os
+from datetime import date
+
+from jiralib.config import load_jira_config, load_project_config, ReportOptions
+from jiralib.jira_builder import build_jira
+from jiralib.report_epics import EpicReport
+from jiralib.report_progress import ProgressReport
+from jiralib.report_resolved import ResolvedReport
+from jiralib.report_issue_detail import IssueDetailReport
+from jiralib.cumulative_flow_graph import CumulativeFlowGraph
+
+@click.group(context_settings=dict(help_option_names=['-h', '--help']))
+@click.option("-v", "--verbose", is_flag=True)
+@click.option("-j", "--jira-config",    type=click.Path(exists=True))
+@click.option("-p", "--project-config", type=click.Path(exists=True))
+@click.pass_context
+def jira(ctx, verbose, project_config, jira_config):
+    ctx.obj = build_report_options(verbose, project_config, jira_config)
+
+def build_report_options(verbose, project_config_file, jira_config_file):
+    jira_config_file = jira_config_file or os.path.expanduser("~/jiraconfig.yml")
+    if verbose: print(f"Using jira config file '{jira_config_file}'")
+    project_config_file = project_config_file or jira_config_file
+    if verbose: print(f"Using project config file '{project_config_file}'")
+
+    jira_config = load_jira_config(jira_config_file)
+    jira = build_jira(verbose, jira_config)
+
+    project_config = load_project_config(project_config_file)
+
+    report_dir = project_config.report_dir or os.path.dirname(os.path.abspath(project_config_file))
+    if "~" in report_dir:
+        report_dir = os.path.expanduser(report_dir)
+
+    if verbose: print(f"Using report_dir {report_dir}")
+
+    return ReportOptions(verbose, project_config, jira_config, jira, report_dir)
+
+@jira.command()
+@click.option("-o", "--open-graph", is_flag=True, default=False, help="Open the graph after generation")
+@click.pass_context
+def cumulative_flow(ctx, open_graph):
+    """Creates a cumulative flow graph from the progress log."""
+    csv_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/progress.csv"
+    png_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/cfd-{str(date.today())}.png"
+    CumulativeFlowGraph(ctx.obj.project_config, csv_file, png_file).run(open_graph)
+
+@jira.command()
+@click.option("-s", "--subject", default="")
+@click.pass_context
+def epic_summary(ctx, subject):
+    """Report on stories within epics."""
+    EpicReport(ctx.obj).run(subject)
+
+@jira.command()
+@click.argument("issue_key")
+@click.pass_context
+def issue_detail(ctx, issue_key):
+    """Report on issue detail."""
+    if not issue_key:
+        sys.exit("issue key required")
+    IssueDetailReport(ctx.obj).run(issue_key)
+
+@jira.command()
+@click.option("-g", "--graph", is_flag=True, default=False, help="Generate cumulative flow graph")
+@click.pass_context
+def progress(ctx, graph):
+    """Report on progress for a project."""
+    project_config = ctx.obj.project_config
+    csv_file = f"{ctx.obj.report_dir}/{project_config.project_name}/progress.csv"
+    if graph:
+        png_file = f"{ctx.obj.report_dir}/{project_config.project_name}/cfd-{str(date.today())}.png"
+    else:
+        png_file = None
+    ProgressReport(ctx.obj).run(csv_file, png_file)
+
+@jira.command()
+@click.option("-d", "--days", default = 30, show_default = True)
+@click.pass_context
+def resolved(ctx, days):
+    """Report on recently closed issues."""
+    csv_file = f"{ctx.obj.report_dir}/resolved.csv"
+    ResolvedReport(ctx.obj).run(days, csv_file)
+
+if __name__ == "__main__":
+    jira()
