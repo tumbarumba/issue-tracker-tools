@@ -4,11 +4,13 @@ from itertools import groupby
 from .jira_builder import JiraQueries
 from .jira_issue import JiraIssue
 
+
 class EpicIssues:
     def __init__(self, epic_key, epic_summary, issues):
         self.epic_key = epic_key
         self.epic_summary = epic_summary
         self.issues = issues
+
 
 class Project:
     def __init__(self, label):
@@ -21,13 +23,16 @@ class Project:
         self.epics[epic.key] = epic_issues
         self.durations.extend(list(map(lambda issue: issue.duration, issues)))
 
+
 class ResolvedReport:
     def __init__(self, opts):
         self.verbose = opts.verbose
         self.issuetypes = opts.jira_config.issuetypes
         self.jira = opts.jira
         self.query = JiraQueries(opts.jira)
-        self.type_display = {issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)}
+        self.type_display = {
+            issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
+        }
 
     def run(self, days, csv_file):
         report_issues = list(map(JiraIssue, self.query.get_resolved_issues(days)))
@@ -40,7 +45,7 @@ class ResolvedReport:
             self.report_project(projects[project_label])
 
         print_heading("All Projects")
-        
+
         all_durations = self.collect_durations(projects)
         print_statistics("all issues", all_durations)
 
@@ -48,7 +53,6 @@ class ResolvedReport:
         for project_label in sorted(projects):
             project_count = len(projects[project_label].durations)
             print(f" {project_count:3} ({project_count / total * 100:2.0f}%): {project_label}")
-
 
     def build_projects(self, report_issues):
         projects = {}
@@ -87,10 +91,12 @@ class ResolvedReport:
         print_statistics(f"project {project.label}", project.durations)
         print()
 
+
 def print_heading(heading):
     print(heading)
     print(len(heading) * "=")
     print()
+
 
 def print_statistics(title, durations):
     print(f"Statistics: {title}")
@@ -98,16 +104,18 @@ def print_statistics(title, durations):
     print(f" lead time median: {median(durations):5.2f}")
     print(f" issue count:    : {len(durations):2}")
 
+
 def update_issue_store(all_issues, csv_file):
     new_issues = set()
     old_issues = load_old_issues(csv_file)
 
     for issue in all_issues:
-        if not issue.key in old_issues:
+        if issue.key not in old_issues:
             new_issues.add(issue)
 
     if new_issues:
         save_new_issues(csv_file, new_issues)
+
 
 def load_old_issues(csv_file):
     issue_keys = set()
@@ -116,6 +124,7 @@ def load_old_issues(csv_file):
         for line in csv_reader:
             issue_keys.add(line["Key"])
     return issue_keys
+
 
 def save_new_issues(csv_file, new_issues):
     with open(csv_file, 'a', encoding="UTF8") as f:

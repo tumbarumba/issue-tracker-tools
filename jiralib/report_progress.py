@@ -1,13 +1,13 @@
 from datetime import date
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
-from os import stat
 from pathlib import Path
 import csv
 
 from .jira_issue import JiraEpic, StateCounts
 from .jira_builder import JiraQueries
 from .cumulative_flow_graph import CumulativeFlowGraph
+
 
 class ProgressReport:
     def __init__(self, opts):
@@ -25,7 +25,7 @@ class ProgressReport:
         epics = self.query.get_project_epics(self.project_config.project_label)
         keys = [epic.key for epic in epics]
         summaries = [epic.fields.summary for epic in epics]
-        
+
         key_space, summary_space = self.table_spacing_calculation(keys, summaries)
         table_length = self.print_header(key_space, summary_space)
         project_counts = self.print_body(epics, keys, key_space, summaries, summary_space, table_length)
@@ -36,7 +36,7 @@ class ProgressReport:
             CumulativeFlowGraph(self.project_config, csv_file, png_file).run(False)
 
     def print_header(self, key_space, summary_space):
-        table_header = f"Key{(key_space-3)*' '}Epic{(summary_space-4)*' '}Pending  In Progress  Done  Total" 
+        table_header = f"Key{(key_space-3)*' '}Epic{(summary_space-4)*' '}Pending  In Progress  Done  Total"
         print(f"\n{table_header}\n{(len(table_header))*'='}")
         return(len(table_header))
 
@@ -53,7 +53,7 @@ class ProgressReport:
 
         print(f"{table_length*'='}\n{(key_space+summary_space)*' '}{self.format_stats_str(project_counts)}\n")
         return project_counts
-    
+
     def table_spacing_calculation(self, keys, summaries):
         space_key = 0
         space_summary = 0
@@ -87,6 +87,7 @@ class ProgressReport:
         stat_display = f"{spacer*' '}{data}"
         return(stat_display)
 
+
 def store_project_counts(count_date, project, project_counts, csv_file):
     csv_path = Path(csv_file)
 
@@ -99,6 +100,7 @@ def store_project_counts(count_date, project, project_counts, csv_file):
     csv_data[count_date] = project_counts
     write_csv_data(csv_path, project, csv_data)
 
+
 def read_csv_data(csv_path):
     csv_data = dict()
 
@@ -110,11 +112,13 @@ def read_csv_data(csv_path):
 
     return csv_data
 
-def counts_from_row(row):    
-    pending     = int(row["pending"])
+
+def counts_from_row(row):
+    pending = int(row["pending"])
     in_progress = int(row["in_progress"])
-    done        = int(row["done"])
+    done = int(row["done"])
     return StateCounts(pending, in_progress, done)
+
 
 def write_csv_data(csv_path, project, csv_data):
     with csv_path.open('w', encoding="UTF8") as f:
@@ -132,6 +136,7 @@ def write_csv_data(csv_path, project, csv_data):
                 "total":        counts.total
             })
 
+
 def add_missing_dates(csv_data, date_to_add_str):
     if not csv_data:
         return
@@ -147,5 +152,3 @@ def add_missing_dates(csv_data, date_to_add_str):
             return
         csv_data[str(next_date)] = csv_data[str(last_date)]
         last_date = next_date
-    
-
