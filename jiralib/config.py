@@ -1,11 +1,30 @@
 import yaml
 
 
+DEFAULT_STATUSES = [
+    {"display": "🔵", "name": "Backlog"},
+    {"display": "🌑", "name": "Selected for Development"},
+    {"display": "🌘", "name": "Ready for Development"},
+    {"display": "🌗", "name": "In Progress"},
+    {"display": "🌖", "name": "In Review"},
+    {"display": "🌕", "name": "Awaiting Merge"},
+    {"display": "🔆", "name": "Awaiting Demo"},
+    {"display": "✅", "name": "Done"},
+    {"display": "C", "name": "Closed"},
+    {"display": "D", "name": "Duplicate"}
+]
+
+DEFAULT_ISSUE_TYPES = [
+    {"display": "📖", "name": "Story"},
+    {"display": "🐞", "name": "Bug"},
+    {"display": "🔧", "name": "Task"}
+]
+
 class JiraConfig:
     def __init__(self, jira_config):
         self.url = jira_config['url']
-        self.statuses = jira_config['statuses']
-        self.issuetypes = jira_config['issuetypes']
+        self.statuses = jira_config.get("statuses", DEFAULT_STATUSES)
+        self.issuetypes = jira_config.get("issuetypes", DEFAULT_ISSUE_TYPES)
 
 
 class ProjectConfig:
