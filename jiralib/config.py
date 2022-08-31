@@ -20,6 +20,7 @@ DEFAULT_ISSUE_TYPES = [
     {"display": "🔧", "name": "Task"}
 ]
 
+
 class JiraConfig:
     def __init__(self, jira_config):
         self.url = jira_config['url']
