@@ -5,4 +5,4 @@ BASE_PATH=$(cd $(dirname $(dirname "${BASH_SOURCE:-$0}")) && pwd)
 set -x
 
 cd $BASE_PATH
-git ls-files | entr ./scripts/test.sh
+git ls-files | entr -s './scripts/lint.sh && pytest'
