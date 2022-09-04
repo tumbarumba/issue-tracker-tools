@@ -36,6 +36,9 @@ class ResolvedReport:
 
     def run(self, days, csv_file):
         report_issues = list(map(JiraIssue, self.query.get_resolved_issues(days)))
+        if not report_issues:
+            print(f"No resolved issues in last {days} days")
+            return
 
         update_issue_store(report_issues, csv_file)
 
@@ -44,9 +47,8 @@ class ResolvedReport:
         for project_label in sorted(projects):
             self.report_project(projects[project_label])
 
-        print_heading("All Projects")
-
         all_durations = self.collect_durations(projects)
+        print_heading("All Projects")
         print_statistics("all issues", all_durations)
 
         total = len(all_durations)
