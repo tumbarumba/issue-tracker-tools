@@ -67,7 +67,7 @@ def epic_summary(ctx, subject):
 @jira.command()
 @click.argument("issue_key")
 @click.pass_context
-def issue_detail(ctx, issue_key):
+def issue(ctx, issue_key):
     """Report on issue detail."""
     if not issue_key:
         sys.exit("issue key required")

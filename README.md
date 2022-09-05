@@ -88,7 +88,7 @@ Options:
 Commands:
   cumulative-flow  Creates a cumulative flow graph from the progress log.
   epic-summary     Report on stories within epics.
-  issue-detail     Report on issue detail.
+  issue            Report on issue detail.
   progress         Report on progress for a project.
   resolved         Report on recently closed issues.
   working          Report on issues currently in progress.
@@ -123,7 +123,7 @@ Options:
 ### Issue Detail
 
 ```
-➜ jira issue-detail -h
+➜ jira issue -h
 Usage: jira issue-detail [OPTIONS] ISSUE_KEY
 
   Report on issue detail.
