@@ -21,7 +21,7 @@ def build_jira(verbose, jira_config):
 
 def _load_jira_token():
     env_values = {
-        **dotenv_values("~/.env"),                      # Load env file from current directory
+        **dotenv_values(".env"),                        # Load env file from current directory
         **dotenv_values(os.path.expanduser("~/.env")),  # Override with env file from home directory
         **os.environ                                    # Override with environment variables
     }

@@ -1,6 +1,6 @@
 project:
   name: Project Name
-  label: Project Label
+  label: project_label
   report_dir: ~/jirareports
   milestones:
   - name: Iteration 3 Demo
