@@ -10,6 +10,7 @@ from jiralib.report_epics import EpicReport
 from jiralib.report_progress import ProgressReport
 from jiralib.report_resolved import ResolvedReport
 from jiralib.report_issue_detail import IssueDetailReport
+from jiralib.report_working import WorkingReport
 from jiralib.cumulative_flow_graph import CumulativeFlowGraph
 
 
@@ -94,6 +95,13 @@ def resolved(ctx, days):
     """Report on recently closed issues."""
     csv_file = f"{ctx.obj.report_dir}/resolved.csv"
     ResolvedReport(ctx.obj).run(days, csv_file)
+
+
+@jira.command()
+@click.pass_context
+def working(ctx):
+    """Report on issues currently in progress."""
+    WorkingReport(ctx.obj).run()
 
 
 if __name__ == "__main__":

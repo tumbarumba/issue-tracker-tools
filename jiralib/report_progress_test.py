@@ -1,4 +1,5 @@
 import datetime
+import pytz
 import textwrap
 from unittest.mock import Mock
 
@@ -171,7 +172,7 @@ def mock_epic(status="To Do"):
     epic.key = "dummy-key"
     epic.changelog.histories = []
     epic.raw = {"fields": {"customfield_10102": {"value": status}}}
-    epic.fields.created = datetime.datetime.now().isoformat()
+    epic.fields.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
     epic.fields.resolutiondate = None
     return epic
 
@@ -192,5 +193,5 @@ def mock_comment(comment_body):
 def mock_story(status):
     story = Mock()
     story.fields.status.name = status
-    story.fields.created = datetime.datetime.now().isoformat()
+    story.fields.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
     return story

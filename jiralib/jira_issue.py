@@ -2,6 +2,8 @@ import dateutil.parser
 import numpy as np
 import re
 import jiralib.jira_builder as jb
+import pytz
+from datetime import datetime
 
 
 class StateCounts:
@@ -35,8 +37,9 @@ class JiraIssue:
         self.key = jira_issue.key
         self.summary = jira_issue.fields.summary
         self.status = jira_issue.fields.status.name
-        self.duration = business_days(self.start_time(), self.completed_time())
-        self.calendar_duration = calendar_days(self.start_time(), self.completed_time())
+        completed = self.completed_time() or datetime.utcnow().replace(tzinfo=pytz.UTC)
+        self.duration = business_days(self.start_time(), completed)
+        self.calendar_duration = calendar_days(self.start_time(), completed)
 
     def start_time(self):
         return self.in_progress_time() or self.created_time()

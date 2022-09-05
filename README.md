@@ -91,6 +91,7 @@ Commands:
   issue-detail     Report on issue detail.
   progress         Report on progress for a project.
   resolved         Report on recently closed issues.
+  working          Report on issues currently in progress.
 ```
 
 ### Cumulative Flow
@@ -155,4 +156,16 @@ Usage: jira resolved [OPTIONS]
 Options:
   -d, --days INTEGER  [default: 30]
   -h, --help          Show this message and exit.
+```
+
+### Working
+
+```
+➜ jira working -h
+Usage: jira working [OPTIONS]
+
+  Report on issues currently in progress.
+
+Options:
+  -h, --help  Show this message and exit.
 ```

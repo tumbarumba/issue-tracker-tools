@@ -64,11 +64,17 @@ class JiraQueries:
         return(self.search_for_issues(jql))
 
     def get_resolved_issues(self, days):
-        jql = f"project = DS and 'Epic Link' is not null and status \
-                in ('Done', 'Awaiting Demo') and \
+        jql = f"project = DS and 'Epic Link' is not null and \
+                status in ('Done', 'Awaiting Demo') and \
                 resolved >= startOfDay(-{days}) order by resolved",
         return(self.search_for_issues(jql))
 
     def get_epic_stories(self, epic_key):
         jql = f"'Epic Link' = {epic_key} order by Status"
+        return self.search_for_issues(jql)
+
+    def get_working_issues(self):
+        jql = "project = DS and issuetype != Epic and \
+               status in ('In Progress', 'In Review', 'Awaiting Merge') \
+               ORDER BY created ASC"
         return self.search_for_issues(jql)
