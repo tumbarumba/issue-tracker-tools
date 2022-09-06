@@ -1,3 +1,4 @@
+from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
@@ -27,9 +28,15 @@ class IssueDetailReport:
         if issue.epic_key():
             epic = self.jira.issue(issue.epic_key())
             print(f" epic:       {epic.key}: {epic.fields.summary}")
-        print(f" started:    {issue.start_time()}")
-        print(f" completed:  {issue.completed_time()}")
-        if issue.duration:
+        if issue.start_time():
+            print(f" started:    {issue.start_time().astimezone(tzlocal())}")
+        else:
+            print(" started:    n/a")
+        if issue.completed_time():
+            print(f" completed:  {issue.completed_time().astimezone(tzlocal())}")
+        else:
+            print(" completed:  n/a")
+        if issue.start_time():
             print(f" duration:   {issue.duration:.2f} business days ({issue.calendar_duration:.2f} calendar days)")
         else:
             print(" duration:   n/a")
