@@ -45,14 +45,14 @@ class JiraIssue:
         return self.in_progress_time() or self.created_time()
 
     def created_time(self):
-        return dateutil.parser.isoparse(self.jira_issue.fields.created)
+        return dateutil.parser.isoparse(self.jira_issue.fields.created).astimezone(pytz.UTC)
 
     def in_progress_time(self):
         for history in self.jira_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
                     if item.toString == "In Progress":
-                        return dateutil.parser.isoparse(history.created)
+                        return dateutil.parser.isoparse(history.created).astimezone(pytz.UTC)
         return None
 
     def completed_time(self):
@@ -60,7 +60,7 @@ class JiraIssue:
 
     def resolution_time(self):
         if self.jira_issue.fields.resolutiondate:
-            return dateutil.parser.isoparse(self.jira_issue.fields.resolutiondate)
+            return dateutil.parser.isoparse(self.jira_issue.fields.resolutiondate).astimezone(pytz.UTC)
         return None
 
     def done_time(self):
@@ -69,7 +69,7 @@ class JiraIssue:
             for item in history.items:
                 if item.field == "status":
                     if item.toString == "Done":
-                        result = dateutil.parser.isoparse(history.created)
+                        result = dateutil.parser.isoparse(history.created).astimezone(pytz.UTC)
         return result
 
     def epic_key(self):
@@ -136,8 +136,13 @@ def business_days(start_time, end_time):
     if not (start_time and end_time):
         return None
     bus_days = np.busday_count(start_time.date(), end_time.date())
-    bus_hours = end_time.hour - start_time.hour
-    return bus_days + bus_hours / 8
+    bus_hours = (end_time.hour + end_time.minute / 60) - (start_time.hour + start_time.minute / 60)
+    if bus_hours < -8:
+        bus_hours = (bus_hours + 24) * -1
+    if bus_hours > 8:
+        bus_hours = 8
+    result = bus_days + (bus_hours / 8)
+    return result
 
 
 def calendar_days(start_time, end_time):
