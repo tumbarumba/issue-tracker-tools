@@ -65,13 +65,14 @@ def epic_summary(ctx, subject):
 
 
 @jira.command()
+@click.option("-o", "--open", is_flag=True, default=False, help="Open issue in a web browser")
 @click.argument("issue_key")
 @click.pass_context
-def issue(ctx, issue_key):
+def issue(ctx, open, issue_key):
     """Report on issue detail."""
     if not issue_key:
         sys.exit("issue key required")
-    IssueDetailReport(ctx.obj).run(issue_key)
+    IssueDetailReport(ctx.obj).run(issue_key, open)
 
 
 @jira.command()

@@ -2,6 +2,8 @@ from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
+import webbrowser
+
 from .jira_issue import JiraIssue
 
 
@@ -9,9 +11,13 @@ class IssueDetailReport:
     def __init__(self, opts):
         self.verbose = opts.verbose
         self.jira = opts.jira
+        self.jira_base_url = opts.jira_config.url
 
-    def run(self, issue_key):
+    def run(self, issue_key, open):
         self.report_issue_detail(issue_key)
+        if open:
+            url = f"{self.jira_base_url}/browse/{issue_key}"
+            webbrowser.open(url)
 
     def report_issue_detail(self, issue_key):  # noqa: C901
         issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
