@@ -37,22 +37,22 @@ class JiraIssue:
         self.key = jira_issue.key
         self.summary = jira_issue.fields.summary
         self.status = jira_issue.fields.status.name
-        completed = self.completed_time() or datetime.utcnow().replace(tzinfo=pytz.UTC)
-        self.duration = business_days(self.start_time(), completed)
-        self.calendar_duration = calendar_days(self.start_time(), completed)
+        duration_end = self.completed_time() or datetime.now()
+        self.duration = business_days(self.start_time(), duration_end)
+        self.calendar_duration = calendar_days(self.start_time(), duration_end)
 
     def start_time(self):
         return self.in_progress_time() or self.created_time()
 
     def created_time(self):
-        return dateutil.parser.isoparse(self.jira_issue.fields.created).astimezone(pytz.UTC)
+        return dateutil.parser.isoparse(self.jira_issue.fields.created)
 
     def in_progress_time(self):
         for history in self.jira_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
                     if item.toString == "In Progress":
-                        return dateutil.parser.isoparse(history.created).astimezone(pytz.UTC)
+                        return dateutil.parser.isoparse(history.created)
         return None
 
     def completed_time(self):
@@ -60,7 +60,7 @@ class JiraIssue:
 
     def resolution_time(self):
         if self.jira_issue.fields.resolutiondate:
-            return dateutil.parser.isoparse(self.jira_issue.fields.resolutiondate).astimezone(pytz.UTC)
+            return dateutil.parser.isoparse(self.jira_issue.fields.resolutiondate)
         return None
 
     def done_time(self):
@@ -69,7 +69,7 @@ class JiraIssue:
             for item in history.items:
                 if item.field == "status":
                     if item.toString == "Done":
-                        result = dateutil.parser.isoparse(history.created).astimezone(pytz.UTC)
+                        result = dateutil.parser.isoparse(history.created)
         return result
 
     def epic_key(self):
@@ -148,4 +148,4 @@ def business_days(start_time, end_time):
 def calendar_days(start_time, end_time):
     if not (start_time and end_time):
         return None
-    return (end_time - start_time).total_seconds() / 60 / 60 / 24
+    return (end_time.astimezone(pytz.UTC) - start_time.astimezone(pytz.UTC)).total_seconds() / 60 / 60 / 24
