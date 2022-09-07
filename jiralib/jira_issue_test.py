@@ -1,5 +1,4 @@
 import pytest
-import pytz
 import dateutil.parser
 from .jira_issue import business_days
 
