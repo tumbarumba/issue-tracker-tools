@@ -124,11 +124,12 @@ Options:
 
 ```
 ➜ jira issue -h
-Usage: jira issue-detail [OPTIONS] ISSUE_KEY
+Usage: jira issue [OPTIONS] ISSUE_KEY
 
   Report on issue detail.
 
 Options:
+  -o, --open  Open issue in a web browser
   -h, --help  Show this message and exit.
 ```
 
