@@ -168,5 +168,6 @@ Usage: jira working [OPTIONS]
   Report on issues currently in progress.
 
 Options:
-  -h, --help  Show this message and exit.
+  -g, --group  Group issues by epic
+  -h, --help   Show this message and exit.
 ```

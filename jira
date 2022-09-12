@@ -99,10 +99,11 @@ def resolved(ctx, days):
 
 
 @jira.command()
+@click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
 @click.pass_context
-def working(ctx):
+def working(ctx, group):
     """Report on issues currently in progress."""
-    WorkingReport(ctx.obj).run()
+    WorkingReport(ctx.obj).run(group)
 
 
 if __name__ == "__main__":

@@ -57,7 +57,10 @@ class JiraQueries:
 
     def get_single_issue(self, issue_key):
         jql = f"key={issue_key}"
-        return(self.search_for_issues(jql))
+        results = self.search_for_issues(jql)
+        if not results:
+            raise LookupError(f"No issue for key {issue_key}")
+        return results[0]
 
     def get_all_open_epics(self):
         jql = "project = DS and issueType = Epic and 'Epic Status' != Done order by rank"
