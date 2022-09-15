@@ -139,20 +139,28 @@ def business_days(start_time, end_time):
     if not (start_time and end_time):
         return None
     bus_days = np.busday_count(start_time.date(), end_time.date())
-    end_hours = end_time.hour + end_time.minute / 60
-    if end_hours < BUSINESS_HOURS_START:
-        end_hours = BUSINESS_HOURS_START
-    start_hours = start_time.hour + start_time.minute / 60
-    if start_hours > BUSINESS_HOURS_END:
-        start_hours = BUSINESS_HOURS_END
-    bus_hours = end_hours - start_hours
+    bus_hours = hours_in_working_day(start_time, end_time)
+    return bus_days + (bus_hours / 8)
+
+def hours_in_working_day(start_time, end_time):
+    bus_hours = end_hours(end_time) - start_hours(start_time)
     if bus_hours < -8:
         bus_hours = (bus_hours + 24) * -1
     if bus_hours > 8:
         bus_hours = 8
-    result = bus_days + (bus_hours / 8)
-    return result
+    return bus_hours
 
+def start_hours(start_time):
+    start_hours = start_time.hour + start_time.minute / 60
+    if start_hours > BUSINESS_HOURS_END:
+        start_hours = BUSINESS_HOURS_END
+    return start_hours
+
+def end_hours(end_time):
+    end_hours = end_time.hour + end_time.minute / 60
+    if end_hours < BUSINESS_HOURS_START:
+        end_hours = BUSINESS_HOURS_START
+    return end_hours
 
 def calendar_days(start_time, end_time):
     if not (start_time and end_time):
