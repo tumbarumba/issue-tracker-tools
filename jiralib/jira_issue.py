@@ -132,11 +132,20 @@ def filter_by_state(stories, states_to_check):
     return list(filter(lambda story: story.fields.status.name in states_to_check, stories))
 
 
+BUSINESS_HOURS_START = 9
+BUSINESS_HOURS_END = 17
+
 def business_days(start_time, end_time):
     if not (start_time and end_time):
         return None
     bus_days = np.busday_count(start_time.date(), end_time.date())
-    bus_hours = (end_time.hour + end_time.minute / 60) - (start_time.hour + start_time.minute / 60)
+    end_hours = end_time.hour + end_time.minute / 60
+    if end_hours < BUSINESS_HOURS_START:
+        end_hours = BUSINESS_HOURS_START
+    start_hours = start_time.hour + start_time.minute / 60
+    if start_hours > BUSINESS_HOURS_END:
+        start_hours = BUSINESS_HOURS_END
+    bus_hours = end_hours - start_hours
     if bus_hours < -8:
         bus_hours = (bus_hours + 24) * -1
     if bus_hours > 8:
