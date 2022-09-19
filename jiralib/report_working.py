@@ -13,9 +13,7 @@ class WorkingReport:
 
     def run(self, group):
         report_issues = list(map(JiraIssue, self.query.get_working_issues()))
-        if not report_issues:
-            print("No working issues")
-            return
+        print(f"Working issue count: {len(report_issues)}\n")
 
         if group:
             sorted_issues = sorted(report_issues, key=lambda i: i.epic_key())
