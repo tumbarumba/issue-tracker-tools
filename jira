@@ -5,7 +5,7 @@ import os
 from datetime import date
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
-from jiralib.jira_builder import build_jira
+from jiralib.jira_builder import build_jira, JiraQueries
 from jiralib.report_epics import EpicReport
 from jiralib.report_progress import ProgressReport
 from jiralib.report_resolved import ResolvedReport
@@ -27,23 +27,15 @@ def build_report_options(verbose, project_config_file, jira_config_file):
     jira_config_file = jira_config_file or os.path.expanduser("~/jiraconfig.yml")
     if verbose:
         print(f"Using jira config file '{jira_config_file}'")
+    jira_config = load_jira_config(jira_config_file)
+
     project_config_file = project_config_file or jira_config_file
     if verbose:
         print(f"Using project config file '{project_config_file}'")
 
-    jira_config = load_jira_config(jira_config_file)
-    jira = build_jira(verbose, jira_config)
-
     project_config = load_project_config(project_config_file)
 
-    report_dir = project_config.report_dir or os.path.dirname(os.path.abspath(project_config_file))
-    if "~" in report_dir:
-        report_dir = os.path.expanduser(report_dir)
-
-    if verbose:
-        print(f"Using report_dir {report_dir}")
-
-    return ReportOptions(verbose, project_config, jira_config, jira, report_dir)
+    return ReportOptions(verbose, project_config, jira_config)
 
 
 @jira.command()
@@ -61,7 +53,9 @@ def cumulative_flow(ctx, open_graph):
 @click.pass_context
 def epic_summary(ctx, subject):
     """Report on stories within epics."""
-    EpicReport(ctx.obj).run(subject)
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    query = JiraQueries(jira)
+    EpicReport(ctx.obj, query).run(subject)
 
 
 @jira.command()
@@ -72,7 +66,9 @@ def issue(ctx, open, issue_key):
     """Report on issue detail."""
     if not issue_key:
         sys.exit("issue key required")
-    IssueDetailReport(ctx.obj).run(issue_key, open)
+
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    IssueDetailReport(ctx.obj, jira).run(issue_key, open)
 
 
 @jira.command()
@@ -86,7 +82,8 @@ def progress(ctx, graph):
         png_file = f"{ctx.obj.report_dir}/{project_config.project_name}/cfd-{str(date.today())}.png"
     else:
         png_file = None
-    ProgressReport(ctx.obj).run(csv_file, png_file)
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    ProgressReport(ctx.obj, jira).run(csv_file, png_file)
 
 
 @jira.command()
@@ -95,7 +92,8 @@ def progress(ctx, graph):
 def resolved(ctx, days):
     """Report on recently closed issues."""
     csv_file = f"{ctx.obj.report_dir}/resolved.csv"
-    ResolvedReport(ctx.obj).run(days, csv_file)
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    ResolvedReport(ctx.obj, jira).run(days, csv_file)
 
 
 @jira.command()
@@ -103,7 +101,9 @@ def resolved(ctx, days):
 @click.pass_context
 def working(ctx, group):
     """Report on issues currently in progress."""
-    WorkingReport(ctx.obj).run(group)
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    query = JiraQueries(jira)
+    WorkingReport(ctx.obj, query).run(group)
 
 
 if __name__ == "__main__":

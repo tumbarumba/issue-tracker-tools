@@ -1,18 +1,17 @@
 from .jira_issue import JiraIssue
-from .jira_builder import JiraQueries
 import sys
 import jira
 import re
 
 
 class EpicReport:
-    def __init__(self, opts):
+    def __init__(self, opts, query):
         self.verbose = opts.verbose
         statuses = opts.jira_config.statuses
         self.status_order = {status["name"]: index for index, status in enumerate(statuses)}
         self.status_display = {status["name"]: status["display"] for index, status in enumerate(statuses)}
         self.project_label = opts.project_config.project_label
-        self.query = JiraQueries(opts.jira)
+        self.query = query
 
     def run(self, subject):
         epics = self.find_epics(subject)

@@ -1,14 +1,12 @@
 from itertools import groupby
 
-from .jira_builder import JiraQueries
 from .jira_issue import JiraIssue
 
 
 class WorkingReport:
-    def __init__(self, opts):
+    def __init__(self, opts, query):
         self.verbose = opts.verbose
-        self.jira = opts.jira
-        self.query = JiraQueries(opts.jira)
+        self.query = query
         self.type_display = {
             issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }

@@ -1,3 +1,4 @@
+import os
 import yaml
 
 
@@ -36,13 +37,23 @@ class ProjectConfig:
         self.report_dir = project_config.get("report_dir", None)
 
 
+REPORT_DIR_DEFAULT = "~/jirareports"
+
+
 class ReportOptions(object):
-    def __init__(self, verbose=False, project_config=None, jira_config=None, jira=None, report_dir=None):
+    def __init__(self, verbose=False, project_config=None, jira_config=None):
         self.verbose = verbose
         self.project_config = project_config
         self.jira_config = jira_config
-        self.jira = jira
-        self.report_dir = report_dir
+        self.report_dir = self.lookup_report_dir()
+
+    def lookup_report_dir(self):
+        dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
+        if "~" in dir:
+            dir = os.path.expanduser(dir)
+        if self.verbose:
+            print(f"Using report_dir {dir}")
+        return dir
 
 
 def load_yaml(config_file, key):

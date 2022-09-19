@@ -10,10 +10,10 @@ from .cumulative_flow_graph import CumulativeFlowGraph
 
 
 class ProgressReport:
-    def __init__(self, opts):
+    def __init__(self, opts, jira):
         self.verbose = opts.verbose
-        self.jira = opts.jira
-        self.query = JiraQueries(opts.jira)
+        self.jira = jira
+        self.query = JiraQueries(jira)
         self.project_config = opts.project_config
 
     def run(self, csv_file, png_file):

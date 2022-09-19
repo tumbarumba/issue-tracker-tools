@@ -8,10 +8,10 @@ from .jira_issue import JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self, opts):
+    def __init__(self, opts, jira):
         self.verbose = opts.verbose
-        self.jira = opts.jira
         self.jira_base_url = opts.jira_config.url
+        self.jira = jira
 
     def run(self, issue_key, open):
         self.report_issue_detail(issue_key)

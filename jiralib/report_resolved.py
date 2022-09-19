@@ -25,11 +25,11 @@ class Project:
 
 
 class ResolvedReport:
-    def __init__(self, opts):
+    def __init__(self, opts, jira):
         self.verbose = opts.verbose
         self.issuetypes = opts.jira_config.issuetypes
-        self.jira = opts.jira
-        self.query = JiraQueries(opts.jira)
+        self.jira = jira
+        self.query = JiraQueries(jira)
         self.type_display = {
             issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }
