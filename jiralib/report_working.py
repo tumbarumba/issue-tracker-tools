@@ -18,7 +18,8 @@ class WorkingReport:
             return
 
         if group:
-            for epic_key, epic_issues in groupby(report_issues, lambda issue: issue.epic_key()):
+            sorted_issues = sorted(report_issues, key=lambda i: i.epic_key())
+            for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key()):
                 epic = self.query.get_single_issue(epic_key)
                 print(f"{epic.key}: {epic.fields.summary}")
                 for issue in epic_issues:
