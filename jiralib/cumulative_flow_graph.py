@@ -147,7 +147,7 @@ class CumulativeFlowGraph:
                 "Pending": "#e9c46a",
                 "Current Date": "#A188A6",
                 "Predicted End Date": "#788AA3",
-                "Iteration 3 Demo": "indigo",
+                "PC22 Code Cutoff": "indigo",
                 "Trendline": "midnightblue"
             }
         if theme == "electric":
@@ -157,7 +157,7 @@ class CumulativeFlowGraph:
                 "Pending": "#240115",
                 "Current Date": "#4C956C",
                 "Predicted End Date": "#788AA3",
-                "Iteration 3 Demo": "indigo",
+                "PC22 Code Cutoff": "indigo",
                 "Trendline": "midnightblue"
             }
         if theme == "pastels":
@@ -167,7 +167,7 @@ class CumulativeFlowGraph:
                 "Pending": "#F7A072",
                 "Current Date": "#9FB798",
                 "Predicted End Date": "#EDB6A3",
-                "Iteration 3 Demo": "#764248",
+                "PC22 Code Cutoff": "#764248",
                 "Trendline": "#5F634F"
             }
         return(colours)
