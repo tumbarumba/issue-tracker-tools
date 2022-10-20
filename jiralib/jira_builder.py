@@ -77,7 +77,7 @@ class JiraQueries:
         return self.search_for_issues(jql)
 
     def get_working_issues(self):
-        jql = "project = DS and issuetype != Epic and \
+        jql = "project = DS and issuetype in ('Story', 'Task') and \
                status in ('In Progress', 'In Review', 'Awaiting Merge') \
                ORDER BY created ASC"
         return self.search_for_issues(jql)
