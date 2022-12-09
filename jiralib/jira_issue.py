@@ -94,7 +94,7 @@ class JiraEpic(JiraIssue):
 
 
 story_estimate_pattern = re.compile(r"^Expected size: (\d+)")
-in_progress_states = ["In Progress", "In Review", "Awaiting Merge"]
+in_progress_states = ["In Progress", "In Review", "Awaiting Merge", "Under Test"]
 done_states = ["Awaiting Demo", "Done"]
 exclude_story_states = ["Closed", "Duplicate"]
 

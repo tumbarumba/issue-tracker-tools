@@ -66,12 +66,12 @@ def test_epic_completed_stories():
 def test_epic_in_progress_stories():
     epic = mock_epic()
     jira = mock_jira(
-        [mock_story("In Progress"), mock_story("In Review"), mock_story("Awaiting Merge")],
-        [mock_comment("Expected size: 3")])
+        [mock_story("In Progress"), mock_story("In Review"), mock_story("Awaiting Merge"), mock_story("Under Test")],
+        [mock_comment("Expected size: 4")])
 
     actual = JiraEpic.create(epic, jira).state_counts
 
-    expected = StateCounts(0, 3, 0)
+    expected = StateCounts(0, 4, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
 
 
