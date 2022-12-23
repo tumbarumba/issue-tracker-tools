@@ -151,7 +151,13 @@ def save_new_issues(csv_file, new_issues):
             csv_writer.writerow(rowdata)
 
 
-def from_date_days_ago(days_ago):
+def jira_from_date_days_ago(days_ago):
     today = this.date_source.today()
     from_date = today - datetime.timedelta(days=days_ago)
     return str(from_date)
+
+
+def jira_to_date():
+    today = this.date_source.today()
+    to_date = today + datetime.timedelta(days=1)
+    return str(to_date)

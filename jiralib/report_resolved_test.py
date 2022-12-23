@@ -22,5 +22,10 @@ def mock_date_source():
 
 
 def test_from_date_days_ago():
-    from_str = rr.from_date_days_ago(7)
+    from_str = rr.jira_from_date_days_ago(7)
     assert from_str == "2022-12-16", f"7 days before {DATE_OF_TEST} should be 2022-12-16"
+
+
+def test_to_date_blank():
+    to_str = rr.jira_to_date()
+    assert to_str == "2022-12-24", f"to_date on {DATE_OF_TEST} should be 2022-12-24"
