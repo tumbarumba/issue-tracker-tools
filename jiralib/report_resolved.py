@@ -1,8 +1,14 @@
 import csv
+import sys
+import datetime
 from statistics import mean, median
 from itertools import groupby
 from .jira_builder import JiraQueries
 from .jira_issue import JiraIssue
+
+
+this = sys.modules[__name__]
+this.date_source = datetime.date
 
 
 class EpicIssues:
@@ -143,3 +149,9 @@ def save_new_issues(csv_file, new_issues):
                 "Duration": issue.duration
             }
             csv_writer.writerow(rowdata)
+
+
+def from_date_days_ago(days_ago):
+    today = this.date_source.today()
+    from_date = today - datetime.timedelta(days=days_ago)
+    return str(from_date)

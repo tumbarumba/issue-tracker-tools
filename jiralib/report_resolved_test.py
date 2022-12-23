@@ -1,0 +1,26 @@
+import pytest
+from datetime import date
+from unittest.mock import Mock
+
+from . import report_resolved as rr
+
+DATE_OF_TEST = date(2022, 12, 23)
+
+
+@pytest.fixture(autouse=True)
+def mock_date_source():
+    # Setup
+    org_date_source = rr.date_source
+    mock_date_source = Mock()
+    mock_date_source.today = DATE_OF_TEST
+
+    # Run the tests
+    yield
+
+    # Teardown
+    rr.date_source = org_date_source
+
+
+def test_from_date_days_ago():
+    from_str = rr.from_date_days_ago(7)
+    assert from_str == "2022-12-16", f"7 days before {DATE_OF_TEST} should be 2022-12-16"
