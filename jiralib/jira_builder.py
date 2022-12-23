@@ -66,10 +66,11 @@ class JiraQueries:
         jql = "project = DS and issueType = Epic and 'Epic Status' != Done order by rank"
         return(self.search_for_issues(jql))
 
-    def get_resolved_issues(self, days):
+    def get_resolved_issues(self, from_date, to_date):
         jql = f"project = DS and 'Epic Link' is not null and \
                 status in ('Done', 'Awaiting Demo') and \
-                resolved >= startOfDay(-{days}) order by resolved",
+                resolved >= '{from_date}' and resolved < '{to_date}' \
+                order by resolved",
         return(self.search_for_issues(jql))
 
     def get_epic_stories(self, epic_key):

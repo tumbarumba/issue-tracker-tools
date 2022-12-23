@@ -23,7 +23,7 @@ def jira(ctx, verbose, project_config, jira_config):
     ctx.obj = build_report_options(verbose, project_config, jira_config)
 
 
-def build_report_options(verbose, project_config_file, jira_config_file):
+def build_report_options(verbose: bool, project_config_file, jira_config_file) -> ReportOptions:
     jira_config_file = jira_config_file or os.path.expanduser("~/jiraconfig.yml")
     if verbose:
         print(f"Using jira config file '{jira_config_file}'")
@@ -87,13 +87,23 @@ def progress(ctx, graph):
 
 
 @jira.command()
-@click.option("-d", "--days", default=30, show_default=True)
+@click.option("-d", "--days", type=click.INT, help="include issues resovled this many days prior to today")
+@click.option("-f", "--from", "from_date", type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="include resolved issues from this date onwards")
+@click.option("-t", "--to",   "to_date",   type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="include issues resolved before this date")
 @click.pass_context
-def resolved(ctx, days):
+def resolved(ctx, days, from_date, to_date):
     """Report on recently closed issues."""
     csv_file = f"{ctx.obj.report_dir}/resolved.csv"
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    ResolvedReport(ctx.obj, jira).run(days, csv_file)
+
+    if from_date:
+        from_date = from_date.date()
+    if to_date:
+        to_date = to_date.date()
+
+    ResolvedReport(ctx.obj, jira).run(days, from_date, to_date, csv_file)
 
 
 @jira.command()

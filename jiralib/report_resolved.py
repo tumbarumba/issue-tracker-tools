@@ -40,10 +40,13 @@ class ResolvedReport:
             issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }
 
-    def run(self, days, csv_file):
-        report_issues = list(map(JiraIssue, self.query.get_resolved_issues(days)))
+    def run(self, days, user_from_date, user_to_date, csv_file):
+        from_date = user_from_date or jira_from_date_days_ago(days)
+        to_date = user_to_date or jira_to_date()
+        print(f"Resolved issues after {from_date} and before {to_date}\n")
+        report_issues = list(map(JiraIssue, self.query.get_resolved_issues(from_date, to_date)))
         if not report_issues:
-            print(f"No resolved issues in last {days} days")
+            print("No resolved issues found")
             return
 
         update_issue_store(report_issues, csv_file)
