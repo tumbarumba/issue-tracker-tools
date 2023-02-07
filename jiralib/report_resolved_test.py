@@ -11,8 +11,8 @@ DATE_OF_TEST = date(2022, 12, 23)
 def mock_date_source():
     # Setup
     org_date_source = rr.date_source
-    mock_date_source = Mock()
-    mock_date_source.today = DATE_OF_TEST
+    rr.date_source = Mock()
+    rr.date_source.today = Mock(return_value=DATE_OF_TEST)
 
     # Run the tests
     yield
