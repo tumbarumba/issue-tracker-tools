@@ -116,5 +116,17 @@ def working(ctx, group):
     WorkingReport(ctx.obj, query).run(group)
 
 
+@jira.command()
+@click.argument("label")
+@click.pass_context
+def epicissues(ctx, label):
+    """Generate jql to search issues for epics with a given label"""
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    query = JiraQueries(jira)
+    issues = query.search_for_issues(f"labels = {label} order by key")
+    keys = [issue.key for issue in issues]
+    print(f"'Epic Link' in ({', '.join(keys)})")
+
+
 if __name__ == "__main__":
     jira()
