@@ -70,7 +70,7 @@ class ResolvedReport:
         report_issues.sort(key=lambda issue: issue.epic_key())
         for epic_key, epic_issues in groupby(report_issues, lambda issue: issue.epic_key()):
             epic = self.jira.issue(epic_key)
-            project_label = epic.fields.labels[0] if epic.fields.labels else "Unplanned"
+            project_label = project_for(epic.fields.labels)
             project = projects.get(project_label) or Project(project_label)
             projects[project_label] = project
             project.add_epic(epic, list(epic_issues))
@@ -164,3 +164,12 @@ def jira_to_date():
     today = this.date_source.today()
     to_date = today + datetime.timedelta(days=1)
     return str(to_date)
+
+def project_for(labels):
+    for label in labels:
+        if is_project(label):
+            return label.split("_")[0]
+    return "Unplanned"
+
+def is_project(label):
+    return "Team" not in label
