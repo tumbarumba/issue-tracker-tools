@@ -165,11 +165,13 @@ def jira_to_date():
     to_date = today + datetime.timedelta(days=1)
     return str(to_date)
 
+
 def project_for(labels):
     for label in labels:
         if is_project(label):
             return label.split("_")[0]
     return "Unplanned"
+
 
 def is_project(label):
     return "Team" not in label
