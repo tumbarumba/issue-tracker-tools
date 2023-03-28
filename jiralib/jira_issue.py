@@ -68,8 +68,8 @@ class JiraIssue:
         for history in self.jira_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
-                    if item.toString == "Done":
-                        result = dateutil.parser.isoparse(history.created)
+                    if item.toString in ["Awaiting Demo", "Done"]:
+                        return dateutil.parser.isoparse(history.created)
         return result
 
     def epic_key(self):
