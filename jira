@@ -88,16 +88,16 @@ def progress(ctx, graph):
 
 
 @jira.command()
-@click.option("-h", "--html", is_flag=True, default=False, help="Output the report as html")
+@click.option("-t", "--no-tasks", is_flag=True, default=False, help="Exclude tasks")
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
-def release(ctx, html, issue_keys):
+def release(ctx, no_tasks, issue_keys):
     """Describes a list of tickets as release notes"""
     if not issue_keys:
         sys.exit("issue keys required for release report")
 
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    ReleaseNotesReport(ctx.obj, jira, html).run(issue_keys)
+    ReleaseNotesReport(ctx.obj, jira, no_tasks).run(issue_keys)
 
 
 @jira.command()

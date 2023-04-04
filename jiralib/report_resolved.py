@@ -24,7 +24,7 @@ class ResolvedReport:
 
         update_issue_store(report_issues, csv_file)
 
-        IssueSummaryReport(self.opts, self.jira, False).run(report_issues)
+        IssueSummaryReport(self.opts, self.jira, True).run(report_issues)
 
 
 def update_issue_store(all_issues, csv_file):

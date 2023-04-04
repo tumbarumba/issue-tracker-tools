@@ -28,11 +28,11 @@ class Project:
 
 
 class IssueSummaryReport:
-    def __init__(self, opts, jira, is_html):
+    def __init__(self, opts, jira, show_stats):
         self.verbose = opts.verbose
         self.issuetypes = opts.jira_config.issuetypes
         self.jira = jira
-        self.is_html = is_html
+        self.show_stats = show_stats
         self.type_display = {
             issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }
@@ -47,14 +47,15 @@ class IssueSummaryReport:
         for project_label in sorted(projects):
             self.report_project(projects[project_label])
 
-        all_durations = self.collect_durations(projects)
-        print_heading("All Projects")
-        print_statistics("all issues", all_durations)
+        if self.show_stats:
+            all_durations = self.collect_durations(projects)
+            print_heading("All Projects")
+            print_statistics("all issues", all_durations)
 
-        total = len(all_durations)
-        for project_label in sorted(projects):
-            project_count = len(projects[project_label].durations)
-            print(f" {project_count:3} ({project_count / total * 100:2.0f}%): {project_label}")
+            total = len(all_durations)
+            for project_label in sorted(projects):
+                project_count = len(projects[project_label].durations)
+                print(f" {project_count:3} ({project_count / total * 100:2.0f}%): {project_label}")
 
     def build_projects(self, report_issues):
         projects = {}
@@ -83,15 +84,20 @@ class IssueSummaryReport:
             ei = project.epics[epic_key]
             print(f"Epic {ei.epic_key}: {ei.epic_summary}")
             for issue in ei.issues:
-                issuetype = issue.jira_issue.fields.issuetype.name
-                print(f"[{issue.duration:5.2f} {self.type_display[issuetype]}] {issue.key}: {issue.summary}")
+                issueicon = self.type_display[issue.jira_issue.fields.issuetype.name]
+                if self.show_stats:
+                    duration = f"{issue.duration:5.2f} "
+                else:
+                    duration = ""
+                print(f"[{duration}{issueicon}] {issue.key}: {issue.summary}")
                 if self.verbose:
                     print(f"           started:   {issue.start_time()}")
                     print(f"           completed: {issue.completed_time()}")
             print()
 
-        print_statistics(f"project {project.label}", project.durations)
-        print()
+        if self.show_stats:
+            print_statistics(f"project {project.label}", project.durations)
+            print()
 
 
 def print_heading(heading):
