@@ -10,6 +10,7 @@ from jiralib.report_epics import EpicReport
 from jiralib.report_progress import ProgressReport
 from jiralib.report_resolved import ResolvedReport
 from jiralib.report_issue_detail import IssueDetailReport
+from jiralib.report_release_notes import ReleaseNotesReport
 from jiralib.report_working import WorkingReport
 from jiralib.cumulative_flow_graph import CumulativeFlowGraph
 
@@ -84,6 +85,19 @@ def progress(ctx, graph):
         png_file = None
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
     ProgressReport(ctx.obj, jira).run(csv_file, png_file)
+
+
+@jira.command()
+@click.option("-h", "--html", is_flag=True, default=False, help="Output the report as html")
+@click.argument("issue_keys", nargs=-1)
+@click.pass_context
+def release(ctx, html, issue_keys):
+    """Describes a list of tickets as release notes"""
+    if not issue_keys:
+        sys.exit("issue keys required for release report")
+
+    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    ReleaseNotesReport(ctx.obj, jira, html).run(issue_keys)
 
 
 @jira.command()

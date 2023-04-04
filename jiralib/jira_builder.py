@@ -55,9 +55,13 @@ class JiraQueries:
         jql = f"project = DS AND issuetype = Epic and labels = {project_label} ORDER BY rank"
         return(self.search_for_issues(jql))
 
-    def get_single_issue(self, issue_key):
-        jql = f"key={issue_key}"
+    def get_issues(self, issue_keys):
+        jql = f"key in ({', '.join(issue_keys)})"
         results = self.search_for_issues(jql)
+        return results
+
+    def get_single_issue(self, issue_key):
+        results = self.get_issues([issue_key])
         if not results:
             raise LookupError(f"No issue for key {issue_key}")
         return results[0]
