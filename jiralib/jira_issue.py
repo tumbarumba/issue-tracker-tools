@@ -72,6 +72,12 @@ class JiraIssue:
                         return dateutil.parser.isoparse(history.created)
         return result
 
+    def fix_versions(self):
+        versions = []
+        if "fixVersions" in self.jira_issue.raw["fields"]:
+            versions = self.jira_issue.raw["fields"]["fixVersions"]
+        return list(map(lambda version: version["name"], versions))
+
     def epic_key(self):
         return self.jira_issue.raw["fields"][jb._EPIC_LINK_FIELD_]
 

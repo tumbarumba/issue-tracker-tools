@@ -34,6 +34,8 @@ class IssueDetailReport:
         if issue.epic_key():
             epic = self.jira.issue(issue.epic_key())
             print(f" epic:       {epic.key}: {epic.fields.summary}")
+        if issue.fix_versions():
+            print(f" fixed:      {', '.join(issue.fix_versions())}")
         if issue.start_time():
             print(f" started:    {issue.start_time().astimezone(tzlocal())}")
         else:
