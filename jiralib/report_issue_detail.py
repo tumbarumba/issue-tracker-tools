@@ -2,7 +2,7 @@ from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
-import webbrowser
+from jira import JIRAError
 
 from .jira_issue import JiraIssue
 
@@ -10,17 +10,16 @@ from .jira_issue import JiraIssue
 class IssueDetailReport:
     def __init__(self, opts, jira):
         self.verbose = opts.verbose
-        self.jira_base_url = opts.jira_config.url
         self.jira = jira
 
-    def run(self, issue_key, open):
-        self.report_issue_detail(issue_key)
-        if open:
-            url = f"{self.jira_base_url}/browse/{issue_key}"
-            webbrowser.open(url)
+    def run(self, issue_key):
+        try:
+            issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
+            self.report_issue_detail(issue)
+        except JIRAError as e:
+            print(f"Failed: {e}")
 
-    def report_issue_detail(self, issue_key):  # noqa: C901
-        issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
+    def report_issue_detail(self, issue):  # noqa: C901
         is_epic = issue.jira_issue.fields.issuetype.name == "Epic"
 
         print(f"{issue.key}: {issue.summary}")

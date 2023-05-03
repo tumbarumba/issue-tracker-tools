@@ -2,6 +2,7 @@
 import click
 import sys
 import os
+import webbrowser
 from datetime import date
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
@@ -59,17 +60,30 @@ def epic_summary(ctx, subject):
     EpicReport(ctx.obj, query).run(subject)
 
 
+def add_fix_version(jira, issue_key, new_fix_version):
+    issue = jira.issue(issue_key)
+    issue.add_field_value("fixVersions", {"name": new_fix_version})
+    print(f"Added version {new_fix_version} to issue {issue.key}")
+
+
 @jira.command()
 @click.option("-o", "--open", is_flag=True, default=False, help="Open issue in a web browser")
+@click.option("-f", "--update-fix-version", is_flag=False, type=click.STRING, help="Update issue with specified fix version")
 @click.argument("issue_key")
 @click.pass_context
-def issue(ctx, open, issue_key):
+def issue(ctx, open, update_fix_version, issue_key):
     """Report on issue detail."""
     if not issue_key:
         sys.exit("issue key required")
 
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    IssueDetailReport(ctx.obj, jira).run(issue_key, open)
+
+    if open:
+        webbrowser.open(f"{ctx.obj.jira_config.url}/browse/{issue_key}")
+    elif update_fix_version:
+        add_fix_version(jira, issue_key, update_fix_version)
+    else:
+        IssueDetailReport(ctx.obj, jira).run(issue_key)
 
 
 @jira.command()
