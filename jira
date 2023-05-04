@@ -7,6 +7,7 @@ from datetime import date
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
 from jiralib.jira_builder import build_jira, JiraQueries
+from jiralib.jira_issue import JiraIssue
 from jiralib.report_epics import EpicReport
 from jiralib.report_progress import ProgressReport
 from jiralib.report_resolved import ResolvedReport
@@ -60,30 +61,34 @@ def epic_summary(ctx, subject):
     EpicReport(ctx.obj, query).run(subject)
 
 
-def add_fix_version(jira, issue_key, new_fix_version):
-    issue = jira.issue(issue_key)
-    issue.add_field_value("fixVersions", {"name": new_fix_version})
-    print(f"Added version {new_fix_version} to issue {issue.key}")
+def add_fix_version(jira, issue_keys, new_fix_version):
+    for key in issue_keys:
+        issue = JiraIssue(jira.issue(key, expand="changelog"))
+        if new_fix_version in issue.fix_versions():
+            print(f"{issue.key}: already assigned to {new_fix_version}")
+        else:
+            issue.add_fix_version(new_fix_version)
+            print(f"{issue.key}: added version {new_fix_version}")
 
 
 @jira.command()
 @click.option("-o", "--open", is_flag=True, default=False, help="Open issue in a web browser")
 @click.option("-f", "--update-fix-version", is_flag=False, type=click.STRING, help="Update issue with specified fix version")
-@click.argument("issue_key")
+@click.argument("issue_keys", nargs=-1)
 @click.pass_context
-def issue(ctx, open, update_fix_version, issue_key):
+def issue(ctx, open, update_fix_version, issue_keys):
     """Report on issue detail."""
-    if not issue_key:
+    if not issue_keys:
         sys.exit("issue key required")
 
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
 
     if open:
-        webbrowser.open(f"{ctx.obj.jira_config.url}/browse/{issue_key}")
+        webbrowser.open(f"{ctx.obj.jira_config.url}/browse/{issue_keys[0]}")
     elif update_fix_version:
-        add_fix_version(jira, issue_key, update_fix_version)
+        add_fix_version(jira, issue_keys, update_fix_version)
     else:
-        IssueDetailReport(ctx.obj, jira).run(issue_key)
+        IssueDetailReport(ctx.obj, jira).run(issue_keys)
 
 
 @jira.command()

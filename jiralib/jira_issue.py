@@ -78,6 +78,9 @@ class JiraIssue:
             versions = self.jira_issue.raw["fields"]["fixVersions"]
         return list(map(lambda version: version["name"], versions))
 
+    def add_fix_version(self, new_fix_version):
+        self.jira_issue.add_field_value("fixVersions", {"name": new_fix_version})
+
     def epic_key(self):
         return self.jira_issue.raw["fields"][jb._EPIC_LINK_FIELD_]
 

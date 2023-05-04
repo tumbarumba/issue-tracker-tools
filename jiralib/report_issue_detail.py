@@ -12,10 +12,12 @@ class IssueDetailReport:
         self.verbose = opts.verbose
         self.jira = jira
 
-    def run(self, issue_key):
+    def run(self, issue_keys):
         try:
-            issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
-            self.report_issue_detail(issue)
+            for issue_key in issue_keys:
+                issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
+                self.report_issue_detail(issue)
+                print("")
         except JIRAError as e:
             print(f"Failed: {e}")
 
