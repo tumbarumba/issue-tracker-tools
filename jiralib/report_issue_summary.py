@@ -52,10 +52,18 @@ class IssueSummaryReport:
             print_heading("All Projects")
             print_statistics("all issues", all_durations)
 
-            total = len(all_durations)
+            total_count = len(all_durations)
             for project_label in sorted(projects):
                 project_count = len(projects[project_label].durations)
-                print(f" {project_count:3} ({project_count / total * 100:2.0f}%): {project_label}")
+                print(f" {project_count:3} ({project_count / total_count * 100:2.0f}%): {project_label}")
+
+            print(" issue durations")
+            total_duration = sum(all_durations)
+            for project_label in sorted(projects):
+                project_duration = sum(projects[project_label].durations)
+                print(f"  {project_duration:6.2f} ({project_duration / total_duration * 100:3.0f}%): {project_label}")
+            print(" --------------------")
+            print(f"  {total_duration:6.2f} (100%): Total")
 
     def build_projects(self, report_issues):
         projects = {}
@@ -110,6 +118,7 @@ def print_statistics(title, durations):
     print(f"Statistics: {title}")
     print(f" lead time mean  : {mean(durations):5.2f}")
     print(f" lead time median: {median(durations):5.2f}")
+    print(f" lead time total : {sum(durations):5.2f}")
     print(f" issue count:    : {len(durations):2}")
 
 
