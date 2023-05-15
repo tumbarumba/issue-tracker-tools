@@ -16,10 +16,13 @@ class WorkingReport:
         print(f"Working issue count: {len(report_issues)}\n")
 
         if group:
-            sorted_issues = sorted(report_issues, key=lambda i: i.epic_key())
-            for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key()):
-                epic = self.query.get_single_issue(epic_key)
-                print(f"{epic.key}: {epic.fields.summary}")
+            sorted_issues = sorted(report_issues, key=lambda i: i.epic_key() or "")
+            for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key() or ""):
+                if epic_key:
+                    epic = self.query.get_single_issue(epic_key)
+                    print(f"{epic.key}: {epic.fields.summary}")
+                else:
+                    print("No Epic:")
                 for issue in epic_issues:
                     self.print_issue(issue)
                 print()
