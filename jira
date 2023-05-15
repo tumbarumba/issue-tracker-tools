@@ -107,7 +107,7 @@ def progress(ctx, graph, label):
 
 
 @jira.command()
-@click.option("-f", "--fix-version", is_flag=False, type=click.STRING, default=False,
+@click.option("-f", "--fix-version", is_flag=False, type=click.STRING, default=None,
               help="Include all issues with this fix version")
 @click.option("-t", "--no-tasks", is_flag=True, default=False, help="Exclude tasks")
 @click.argument("issue_keys", nargs=-1)
