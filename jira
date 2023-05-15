@@ -93,17 +93,17 @@ def issue(ctx, open, update_fix_version, issue_keys):
 
 @jira.command()
 @click.option("-g", "--graph", is_flag=True, default=False, help="Generate cumulative flow graph")
+@click.argument("label")
 @click.pass_context
-def progress(ctx, graph):
+def progress(ctx, graph, label):
     """Report on progress for a project."""
-    project_config = ctx.obj.project_config
-    csv_file = f"{ctx.obj.report_dir}/{project_config.project_name}/progress.csv"
+    csv_file = f"{ctx.obj.report_dir}/{label}/progress.csv"
     if graph:
-        png_file = f"{ctx.obj.report_dir}/{project_config.project_name}/cfd-{str(date.today())}.png"
+        png_file = f"{ctx.obj.report_dir}/{label}/cfd-{str(date.today())}.png"
     else:
         png_file = None
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    ProgressReport(ctx.obj, jira).run(csv_file, png_file)
+    ProgressReport(ctx.obj, jira).run(label, csv_file, png_file)
 
 
 @jira.command()
@@ -118,7 +118,7 @@ def release(ctx, fix_version, no_tasks, issue_keys):
 
     if fix_version:
         fix_issues = JiraQueries(jira).get_fix_version_issues(fix_version)
-        issue_keys = list(map(lambda issue: issue.key, fix_issues))
+        issue_keys = [issue.key for issue in fix_issues]
 
     if not issue_keys:
         sys.exit("issue keys required for release report")
@@ -162,8 +162,7 @@ def working(ctx, group):
 def epicissues(ctx, label):
     """Generate jql to search issues for epics with a given label"""
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    query = JiraQueries(jira)
-    issues = query.search_for_issues(f"labels = {label} order by key")
+    issues = JiraQueries(jira).search_for_issues(f"labels = {label} order by key")
     keys = [issue.key for issue in issues]
     print(f"'Epic Link' in ({', '.join(keys)})")
 

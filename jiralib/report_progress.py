@@ -14,15 +14,14 @@ class ProgressReport:
         self.verbose = opts.verbose
         self.jira = jira
         self.query = JiraQueries(jira)
-        self.project_config = opts.project_config
 
-    def run(self, csv_file, png_file):
-        self.report_cumulative_flow(csv_file, png_file)
+    def run(self, label, csv_file, png_file):
+        self.report_cumulative_flow(label, csv_file, png_file)
 
-    def report_cumulative_flow(self, csv_file, png_file):
+    def report_cumulative_flow(self, label, csv_file, png_file):
         today = str(date.today())
-        print(f"\nProject: {self.project_config.project_name}\nDate: {today}")
-        epics = self.query.get_project_epics(self.project_config.project_label)
+        print(f"Label: {label}\nDate: {today}")
+        epics = self.query.get_project_epics(label)
         keys = [epic.key for epic in epics]
         summaries = [epic.fields.summary for epic in epics]
 
@@ -30,7 +29,7 @@ class ProgressReport:
         table_length = self.print_header(key_space, summary_space)
         project_counts = self.print_body(epics, keys, key_space, summaries, summary_space, table_length)
 
-        store_project_counts(today, self.project_config.project_name, project_counts, csv_file)
+        store_project_counts(today, label, project_counts, csv_file)
 
         if png_file:
             CumulativeFlowGraph(self.project_config, csv_file, png_file).run(False)
