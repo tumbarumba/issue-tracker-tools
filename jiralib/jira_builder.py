@@ -57,8 +57,11 @@ class JiraQueries:
 
     def get_issues(self, issue_keys):
         jql = f"key in ({', '.join(issue_keys)})"
-        results = self.search_for_issues(jql)
-        return results
+        return self.search_for_issues(jql)
+
+    def get_fix_version_issues(self, fix_version):
+        jql = f"project = DS AND fixVersion = {fix_version}"
+        return self.search_for_issues(jql)
 
     def get_single_issue(self, issue_key):
         results = self.get_issues([issue_key])
