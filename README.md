@@ -120,18 +120,43 @@ Options:
   -h, --help          Show this message and exit.
 ```
 
+### Git Tickets
+
+```
+Usage: git-tickets <revision-range>
+
+  Report on Jira tickets that can be seen in git commit messages
+```
+
+This is a small bash script that under the covers runs `git log` against a revision range, and matches strings that
+looks like Jira tickets. For example:
+
+`git-tickets 0.29.0..0.30.0` will show all tickets from commits after the `0.29.0` tag, and before and including the
+`0.30.0` tag. This can be used to find all Jira issues that are part of a release, and then updating the issues in
+Jira to specify the fix version. For example:
+
+`git-tickets 0.29.0..0.30.0 | xargs jira issue --update-fix-version 0.30.0`
+
+For more information about how to specify git revision ranges, see
+[https://www.git-scm.com/docs/gitrevisions#_specifying_ranges](https://www.git-scm.com/docs/gitrevisions#_specifying_ranges)
+
 ### Issue Detail
 
 ```
-➜ jira issue -h
-Usage: jira issue [OPTIONS] ISSUE_KEY
+Usage: jira issue [OPTIONS] [ISSUE_KEYS]...
 
   Report on issue detail.
 
 Options:
-  -o, --open  Open issue in a web browser
-  -h, --help  Show this message and exit.
+  -o, --open                     Open issue in a web browser
+  -f, --update-fix-version TEXT  Update issue with specified fix version
+  -h, --help                     Show this message and exit.
 ```
+
+If no options are specific, this report will show detailed information on a issue.
+
+If the `-f` option is specified, each issue will be updated instead, and message printed to show that the issue was
+updated.
 
 ### Progress
 
@@ -146,17 +171,34 @@ Options:
   -h, --help   Show this message and exit.
 ```
 
+### Release Notes
+
+```
+Usage: jira release [OPTIONS] [ISSUE_KEYS]...
+
+  Describes a list of tickets as release notes
+
+Options:
+  -f, --fix-version TEXT  Include all issues with this fix version
+  -t, --no-tasks          Exclude tasks
+  -h, --help              Show this message and exit.
+```
+
+The issue keys can be specified directly on the command line. Alternatively, the `-f` option can be specified, and
+the Jira will be queried to find all issue keys with that specific fix version.
+
 ### Resolved
 
 ```
-➜ jira resolved -h
 Usage: jira resolved [OPTIONS]
 
   Report on recently closed issues.
 
 Options:
-  -d, --days INTEGER  [default: 30]
-  -h, --help          Show this message and exit.
+  -d, --days INTEGER     include issues resovled this many days prior to today
+  -f, --from [%Y-%m-%d]  include resolved issues from this date onwards
+  -t, --to [%Y-%m-%d]    include issues resolved before this date
+  -h, --help             Show this message and exit.
 ```
 
 ### Working
