@@ -30,7 +30,7 @@ class WorkingReport:
         for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key() or ""):
             if epic_key:
                 epic = epics[epic_key]
-                print(f"{epic.key}: {epic.summary} ({epic.rank()})")
+                print(f"{epic.key}: {epic.summary}")
             else:
                 print("No Epic:")
             for issue in epic_issues:
