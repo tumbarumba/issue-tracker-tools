@@ -7,6 +7,7 @@ from jira import JIRA
 this = sys.modules[__name__]
 this._EPIC_LINK_FIELD_ = "customfield_10101"
 this._EPIC_STATUS_FIELD_ = "customfield_10102"
+this._ISSUE_RANK_FIELD_ = "customfield_10105"
 this._verbose_ = False
 
 
@@ -31,15 +32,16 @@ def _load_jira_token():
 def _init_custom_fields(jira):
     all_fields = jira.fields()
 
-    epic_link_field = next(filter(lambda f: f["name"] == "Epic Link", all_fields))
-    this._EPIC_LINK_FIELD_ = epic_link_field["id"]
-    if this._verbose_:
-        print(f"Setting epic link field to {this._EPIC_LINK_FIELD_}")
+    this._EPIC_LINK_FIELD_ = _find_custom_field(all_fields, "Epic Link")
+    this._EPIC_STATUS_FIELD_ = _find_custom_field(all_fields, "Epic Status")
+    this._ISSUE_RANK_FIELD_ = _find_custom_field(all_fields, "Rank")
 
-    epic_status_field = next(filter(lambda f: f["name"] == "Epic Status", all_fields))
-    this._EPIC_STATUS_FIELD_ = epic_status_field["id"]
+
+def _find_custom_field(all_fields, name):
+    field = next(filter(lambda f: f["name"] == name, all_fields))
     if this._verbose_:
-        print(f"Setting epic status field to {this._EPIC_STATUS_FIELD_}")
+        print(f"Field '{name}' has id '{field['id']}' on this server")
+    return field["id"]
 
 
 class JiraQueries:

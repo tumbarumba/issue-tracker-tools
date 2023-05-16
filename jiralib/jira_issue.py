@@ -90,6 +90,9 @@ class JiraIssue:
     def epic_summary(self):
         return self.jira_issue.raw["fields"][jb._EPIC_STATUS_FIELD_]["summary"]
 
+    def rank(self):
+        return self.jira_issue.raw['fields'][jb._ISSUE_RANK_FIELD_]
+
 
 class JiraEpic(JiraIssue):
     @classmethod

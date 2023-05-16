@@ -16,19 +16,41 @@ class WorkingReport:
         print(f"Working issue count: {len(report_issues)}\n")
 
         if group:
-            sorted_issues = sorted(report_issues, key=lambda i: i.epic_key() or "")
-            for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key() or ""):
-                if epic_key:
-                    epic = self.query.get_single_issue(epic_key)
-                    print(f"{epic.key}: {epic.fields.summary}")
-                else:
-                    print("No Epic:")
-                for issue in epic_issues:
-                    self.print_issue(issue)
-                print()
+            self.report_issues_grouped_by_epic(report_issues)
         else:
-            for issue in sorted(report_issues, key=lambda issue: issue.duration):
+            self.report_issues(report_issues)
+
+    def report_issues(self, issues):
+        for issue in sorted(issues, key=lambda issue: issue.duration):
+            self.print_issue(issue)
+
+    def report_issues_grouped_by_epic(self, issues):
+        epics = self.epics_for(issues)
+        sorted_issues = sorted(issues, key=lambda i: self.rank_for(i.epic_key(), epics))
+        for epic_key, epic_issues in groupby(sorted_issues, lambda issue: issue.epic_key() or ""):
+            if epic_key:
+                epic = epics[epic_key]
+                print(f"{epic.key}: {epic.summary} ({epic.rank()})")
+            else:
+                print("No Epic:")
+            for issue in epic_issues:
                 self.print_issue(issue)
+            print()
+
+    def epics_for(self, issues):
+        epics = {}
+        for issue in issues:
+            if issue.epic_key() and not issue.epic_key() in epics:
+                epic = JiraIssue(self.query.get_single_issue(issue.epic_key()))
+                epics[epic.key] = epic
+
+        return epics
+
+    def rank_for(self, epic_key, epics):
+        if epic_key in epics:
+            return epics[epic_key].rank()
+        else:
+            return "Ω"  # Omega should sort last alphabetically
 
     def print_issue(self, issue):
         typeicon = self.type_display[issue.jira_issue.fields.issuetype.name]
