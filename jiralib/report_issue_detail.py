@@ -1,18 +1,20 @@
+from __future__ import annotations
+from typing import Dict, List
 from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
-from jira import JIRAError
+from jira import JIRA, JIRAError
 
 from .jira_issue import JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self, opts, jira):
-        self.verbose = opts.verbose
+    def __init__(self: IssueDetailReport, opts: Dict[object], jira: JIRA):
+        self.verbose: bool = opts.verbose
         self.jira = jira
 
-    def run(self, issue_keys):
+    def run(self: IssueDetailReport, issue_keys: List[str]) -> None:
         try:
             for issue_key in issue_keys:
                 issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
@@ -21,7 +23,7 @@ class IssueDetailReport:
         except JIRAError as e:
             print(f"Failed: {e}")
 
-    def report_issue_detail(self, issue):  # noqa: C901
+    def report_issue_detail(self: IssueDetailReport, issue: JiraIssue):  # noqa: C901
         is_epic = issue.jira_issue.fields.issuetype.name == "Epic"
 
         print(f"{issue.key}: {issue.summary}")
@@ -83,14 +85,14 @@ class IssueDetailReport:
             print(json.dumps(json.loads(serialised), indent=2))
 
 
-def initials_for(full_name):
+def initials_for(full_name: str) -> str:
     return "".join(name[0].upper() for name in full_name.split())
 
 
 git_comment_pattern = re.compile(r"^\[([\w ]+)\|.+\{quote\}(.*)\{quote\}$")
 
 
-def formatted_comment(comment):
+def formatted_comment(comment: str) -> str:
     if comment.author.name == "gitlab-jira":
         match = git_comment_pattern.match(comment.body)
         if match:

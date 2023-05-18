@@ -1,43 +1,45 @@
+from __future__ import annotations
+from typing import Dict, List
 import sys
 import datetime
 from statistics import mean, median
 from itertools import groupby
-
+from jira import Issue, JIRA
+from .jira_issue import JiraIssue
 
 this = sys.modules[__name__]
 this.date_source = datetime.date
 
 
 class EpicIssues:
-    def __init__(self, epic_key, epic_summary, issues):
-        self.epic_key = epic_key
-        self.epic_summary = epic_summary
-        self.issues = issues
+    def __init__(self: EpicIssues, epic_key: str, epic_summary: str, issues: List[JiraIssue]):
+        self.epic_key: str = epic_key
+        self.epic_summary: str = epic_summary
+        self.issues: List[JiraIssue] = issues
 
 
 class Project:
-    def __init__(self, label):
+    def __init__(self: Project, label: str):
         self.label = label
-        self.epics = {}
-        self.durations = []
+        self.epics: Dict[str, EpicIssues] = {}
+        self.durations: List[float] = []
 
-    def add_epic(self, epic, issues):
+    def add_epic(self: Project, epic: Issue, issues: List[JiraIssue]) -> None:
         epic_issues = EpicIssues(epic.key, epic.fields.summary, issues)
         self.epics[epic.key] = epic_issues
         self.durations.extend(list(map(lambda issue: issue.duration, issues)))
 
 
 class IssueSummaryReport:
-    def __init__(self, opts, jira, show_stats):
-        self.verbose = opts.verbose
-        self.issuetypes = opts.jira_config.issuetypes
-        self.jira = jira
-        self.show_stats = show_stats
-        self.type_display = {
+    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JIRA, show_stats: bool):
+        self.verbose: bool = opts.verbose
+        self.show_stats: bool = show_stats
+        self.jira: JIRA = jira
+        self.type_display: Dict[str, str] = {
             issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }
 
-    def run(self, report_issues):
+    def run(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> None:
         if not report_issues:
             print("No issues found")
             return
@@ -65,11 +67,11 @@ class IssueSummaryReport:
             print(" --------------------")
             print(f"  {total_duration:6.2f} (100%): Total")
 
-    def build_projects(self, report_issues):
-        projects = {}
+    def build_projects(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> Dict[str, Project]:
+        projects: Dict[str, Project] = {}
         report_issues.sort(key=lambda issue: issue.epic_key())
         for epic_key, epic_issues in groupby(report_issues, lambda issue: issue.epic_key()):
-            epic = self.jira.issue(epic_key)
+            epic: Issue = self.jira.issue(epic_key)
             project_label = project_for(epic.fields.labels)
             project = projects.get(project_label) or Project(project_label)
             projects[project_label] = project
@@ -77,19 +79,19 @@ class IssueSummaryReport:
 
         return projects
 
-    def collect_durations(self, projects):
-        all_durations = []
+    def collect_durations(self: IssueSummaryReport, projects: Dict[str, Project]) -> List[float]:
+        all_durations: List[float] = []
         for project_label in sorted(projects):
             project = projects[project_label]
             all_durations.extend(project.durations)
 
         return all_durations
 
-    def report_project(self, project):
+    def report_project(self: IssueSummaryReport, project: Project) -> None:
         print_heading(f"Project: {project.label}")
 
         for epic_key in sorted(project.epics):
-            ei = project.epics[epic_key]
+            ei: EpicIssues = project.epics[epic_key]
             print(f"Epic {ei.epic_key}: {ei.epic_summary}")
             for issue in ei.issues:
                 issueicon = self.type_display[issue.jira_issue.fields.issuetype.name]
@@ -108,13 +110,13 @@ class IssueSummaryReport:
             print()
 
 
-def print_heading(heading):
+def print_heading(heading) -> None:
     print(heading)
     print(len(heading) * "=")
     print()
 
 
-def print_statistics(title, durations):
+def print_statistics(title: str, durations: List[float]) -> None:
     print(f"Statistics: {title}")
     print(f" lead time mean  : {mean(durations):5.2f}")
     print(f" lead time median: {median(durations):5.2f}")
@@ -122,12 +124,12 @@ def print_statistics(title, durations):
     print(f" issue count:    : {len(durations):2}")
 
 
-def project_for(labels):
+def project_for(labels: List[str]) -> str:
     for label in labels:
         if is_project(label):
             return label.split("_")[0]
     return "Unplanned"
 
 
-def is_project(label):
+def is_project(label: str) -> bool:
     return "Team" not in label

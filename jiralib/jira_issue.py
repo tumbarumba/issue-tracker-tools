@@ -1,9 +1,13 @@
+from __future__ import annotations
 import dateutil.parser
 import numpy as np
 import re
 import jiralib.jira_builder as jb
 import pytz
 from datetime import datetime
+from typing import List
+from jira import JIRA, Issue
+from jira.client import ResultList
 
 
 class StateCounts:
@@ -14,20 +18,20 @@ class StateCounts:
         self.total = pending + in_progress + done
 
     @classmethod
-    def zero(cls):
+    def zero(cls) -> StateCounts:
         return cls(0, 0, 0)
 
-    def __add__(self, other):
+    def __add__(self, other) -> StateCounts:
         return StateCounts(self.pending + other.pending,
                            self.in_progress + other.in_progress,
                            self.done + other.done)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> StateCounts:
         return (self.pending == other.pending
                 and self.in_progress == other.in_progress
                 and self.done == other.done)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"StateCounts({self.pending},{self.in_progress},{self.done})"
 
 
@@ -41,13 +45,13 @@ class JiraIssue:
         self.duration = business_days(self.start_time(), duration_end)
         self.calendar_duration = calendar_days(self.start_time(), duration_end)
 
-    def start_time(self):
+    def start_time(self) -> datetime:
         return self.in_progress_time() or self.created_time()
 
-    def created_time(self):
+    def created_time(self) -> datetime:
         return dateutil.parser.isoparse(self.jira_issue.fields.created)
 
-    def in_progress_time(self):
+    def in_progress_time(self) -> datetime | None:
         for history in self.jira_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
@@ -55,15 +59,15 @@ class JiraIssue:
                         return dateutil.parser.isoparse(history.created)
         return None
 
-    def completed_time(self):
+    def completed_time(self) -> datetime | None:
         return self.done_time() or self.resolution_time()
 
-    def resolution_time(self):
+    def resolution_time(self) -> datetime | None:
         if self.jira_issue.fields.resolutiondate:
             return dateutil.parser.isoparse(self.jira_issue.fields.resolutiondate)
         return None
 
-    def done_time(self):
+    def done_time(self) -> datetime | None:
         result = None
         for history in self.jira_issue.changelog.histories:
             for item in history.items:
@@ -72,35 +76,35 @@ class JiraIssue:
                         return dateutil.parser.isoparse(history.created)
         return result
 
-    def fix_versions(self):
+    def fix_versions(self) -> List[str]:
         versions = []
         if "fixVersions" in self.jira_issue.raw["fields"]:
             versions = self.jira_issue.raw["fields"]["fixVersions"]
         return list(map(lambda version: version["name"], versions))
 
-    def add_fix_version(self, new_fix_version):
+    def add_fix_version(self, new_fix_version) -> None:
         self.jira_issue.add_field_value("fixVersions", {"name": new_fix_version})
 
-    def epic_key(self):
+    def epic_key(self) -> str:
         return self.jira_issue.raw["fields"][jb._EPIC_LINK_FIELD_]
 
-    def epic_status(self):
+    def epic_status(self) -> str:
         return self.jira_issue.raw["fields"][jb._EPIC_STATUS_FIELD_]["value"]
 
-    def epic_summary(self):
+    def epic_summary(self) -> str:
         return self.jira_issue.raw["fields"][jb._EPIC_STATUS_FIELD_]["summary"]
 
-    def rank(self):
+    def rank(self) -> str:
         return self.jira_issue.raw['fields'][jb._ISSUE_RANK_FIELD_]
 
 
 class JiraEpic(JiraIssue):
     @classmethod
-    def create(cls, jira_issue, jira):
+    def create(cls, jira_issue: Issue, jira: JIRA) -> JiraEpic:
         counts = load_epic_counts(jira_issue, jira)
         return cls(jira_issue, counts)
 
-    def __init__(self, jira_issue, state_counts):
+    def __init__(self: JiraEpic, jira_issue: Issue, state_counts: StateCounts):
         super().__init__(jira_issue)
         self.state_counts = state_counts
 
@@ -111,7 +115,7 @@ done_states = ["Awaiting Demo", "Done"]
 exclude_story_states = ["Closed", "Duplicate"]
 
 
-def load_epic_counts(epic, jira):
+def load_epic_counts(epic, jira) -> StateCounts:
     estimated_count = load_epic_estimated_stories(epic, jira)
     all_stories = jb.JiraQueries(jira).get_epic_stories(epic.key)
     if len(all_stories) == 0:
@@ -130,7 +134,7 @@ def load_epic_counts(epic, jira):
     return StateCounts(pending_count, in_progress_count, done_count)
 
 
-def load_epic_estimated_stories(epic, jira):
+def load_epic_estimated_stories(epic, jira) -> int:
     estimated_stories = 10
     for comment in jira.comments(epic):
         match = story_estimate_pattern.match(comment.body)
@@ -140,7 +144,7 @@ def load_epic_estimated_stories(epic, jira):
     return estimated_stories
 
 
-def filter_by_state(stories, states_to_check):
+def filter_by_state(stories: ResultList[Issue], states_to_check: List[str]) -> List[Issue]:
     return list(filter(lambda story: story.fields.status.name in states_to_check, stories))
 
 
@@ -148,7 +152,7 @@ BUSINESS_HOURS_START = 9
 BUSINESS_HOURS_END = 17
 
 
-def business_days(start_time, end_time):
+def business_days(start_time: datetime, end_time: datetime) -> float | None:
     if not (start_time and end_time):
         return None
     bus_days = np.busday_count(start_time.date(), end_time.date())
@@ -156,7 +160,7 @@ def business_days(start_time, end_time):
     return bus_days + (bus_hours / 8)
 
 
-def hours_in_working_day(start_time, end_time):
+def hours_in_working_day(start_time: datetime, end_time: datetime) -> float:
     bus_hours = end_hours(end_time) - start_hours(start_time)
     if bus_hours < -8:
         bus_hours = (bus_hours + 24) * -1
@@ -165,17 +169,17 @@ def hours_in_working_day(start_time, end_time):
     return bus_hours
 
 
-def start_hours(start_time):
+def start_hours(start_time) -> float:
     start_hours = start_time.hour + start_time.minute / 60
     return min(start_hours, BUSINESS_HOURS_END)
 
 
-def end_hours(end_time):
+def end_hours(end_time) -> float:
     end_hours = end_time.hour + end_time.minute / 60
     return max(end_hours, BUSINESS_HOURS_START)
 
 
-def calendar_days(start_time, end_time):
+def calendar_days(start_time, end_time) -> float | None:
     if not (start_time and end_time):
         return None
     return (end_time.astimezone(pytz.UTC) - start_time.astimezone(pytz.UTC)).total_seconds() / 60 / 60 / 24

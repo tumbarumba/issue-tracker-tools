@@ -1,9 +1,12 @@
+from __future__ import annotations
+from typing import Dict, List, Set
 import csv
 import sys
 import datetime
 from .jira_builder import JiraQueries
 from .jira_issue import JiraIssue
 from .report_issue_summary import IssueSummaryReport
+from jira import JIRA
 
 
 this = sys.modules[__name__]
@@ -11,12 +14,12 @@ this.date_source = datetime.date
 
 
 class ResolvedReport:
-    def __init__(self, opts, jira):
+    def __init__(self: ResolvedReport, opts: Dict[object], jira: JIRA):
         self.opts = opts
         self.jira = jira
         self.query = JiraQueries(jira)
 
-    def run(self, days, user_from_date, user_to_date, csv_file):
+    def run(self: ResolvedReport, days: int, user_from_date: str, user_to_date: str, csv_file: str) -> None:
         from_date = user_from_date or jira_from_date_days_ago(days)
         to_date = user_to_date or jira_to_date()
         print(f"Resolved issues after {from_date} and before {to_date}\n")
@@ -27,19 +30,19 @@ class ResolvedReport:
         IssueSummaryReport(self.opts, self.jira, True).run(report_issues)
 
 
-def update_issue_store(all_issues, csv_file):
-    new_issues = set()
-    old_issues = load_old_issues(csv_file)
+def update_issue_store(all_issues: List[JiraIssue], csv_file: str) -> None:
+    new_issues: Set[JiraIssue] = set()
+    old_issue_keys: Set[str] = load_old_issues(csv_file)
 
     for issue in all_issues:
-        if issue.key not in old_issues:
+        if issue.key not in old_issue_keys:
             new_issues.add(issue)
 
     if new_issues:
         save_new_issues(csv_file, new_issues)
 
 
-def load_old_issues(csv_file):
+def load_old_issues(csv_file: str) -> Set[str]:
     issue_keys = set()
     with open(csv_file, 'r', encoding="UTF8") as f:
         csv_reader = csv.DictReader(f)
@@ -48,7 +51,7 @@ def load_old_issues(csv_file):
     return issue_keys
 
 
-def save_new_issues(csv_file, new_issues):
+def save_new_issues(csv_file: str, new_issues: List[JiraIssue]) -> None:
     with open(csv_file, 'a', encoding="UTF8") as f:
         field_names = ["Key", "Epic", "Status", "Summary", "Started", "Done", "Duration"]
         csv_writer = csv.DictWriter(f, fieldnames=field_names)
@@ -65,13 +68,13 @@ def save_new_issues(csv_file, new_issues):
             csv_writer.writerow(rowdata)
 
 
-def jira_from_date_days_ago(days_ago):
+def jira_from_date_days_ago(days_ago: int) -> str:
     today = this.date_source.today()
     from_date = today - datetime.timedelta(days=days_ago)
     return str(from_date)
 
 
-def jira_to_date():
+def jira_to_date() -> str:
     today = this.date_source.today()
     to_date = today + datetime.timedelta(days=1)
     return str(to_date)

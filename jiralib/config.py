@@ -48,7 +48,7 @@ class ReportOptions(object):
         self.jira_config = jira_config
         self.report_dir = self.lookup_report_dir()
 
-    def lookup_report_dir(self):
+    def lookup_report_dir(self) -> str:
         dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
         if "~" in dir:
             dir = os.path.expanduser(dir)
@@ -63,11 +63,11 @@ def load_yaml(config_file, key):
         return config[key]
 
 
-def load_project_config(config_file):
+def load_project_config(config_file: str) -> ProjectConfig:
     config = load_yaml(config_file, "project")
     return ProjectConfig(config)
 
 
-def load_jira_config(config_file):
+def load_jira_config(config_file: str) -> JiraConfig:
     config = load_yaml(config_file, "jira")
     return JiraConfig(config)

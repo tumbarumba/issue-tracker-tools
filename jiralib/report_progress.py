@@ -1,7 +1,10 @@
+from __future__ import annotations
+from typing import Dict, List, Tuple
 from datetime import date
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
+from jira import Issue, JIRA
 import csv
 
 from .jira_issue import JiraEpic, StateCounts
@@ -10,20 +13,20 @@ from .cumulative_flow_graph import CumulativeFlowGraph
 
 
 class ProgressReport:
-    def __init__(self, opts, jira):
-        self.verbose = opts.verbose
-        self.jira = jira
-        self.query = JiraQueries(jira)
+    def __init__(self: ProgressReport, opts: Dict[object], jira: JIRA):
+        self.verbose: bool = opts.verbose
+        self.jira: JIRA = jira
+        self.query: JiraQueries = JiraQueries(jira)
 
-    def run(self, label, csv_file, png_file):
+    def run(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
         self.report_cumulative_flow(label, csv_file, png_file)
 
-    def report_cumulative_flow(self, label, csv_file, png_file):
+    def report_cumulative_flow(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
         today = str(date.today())
         print(f"Label: {label}\nDate: {today}")
-        epics = self.query.get_project_epics(label)
-        keys = [epic.key for epic in epics]
-        summaries = [epic.fields.summary for epic in epics]
+        epics: List[Issue] = self.query.get_project_epics(label)
+        keys: List[str] = [epic.key for epic in epics]
+        summaries: List[str] = [epic.fields.summary for epic in epics]
 
         key_space, summary_space = self.table_spacing_calculation(keys, summaries)
         table_length = self.print_header(key_space, summary_space)
@@ -34,12 +37,18 @@ class ProgressReport:
         if png_file:
             CumulativeFlowGraph(self.project_config, csv_file, png_file).run(False)
 
-    def print_header(self, key_space, summary_space):
+    def print_header(self: ProgressReport, key_space: int, summary_space: int) -> int:
         table_header = f"Key{(key_space-3)*' '}Epic{(summary_space-4)*' '}Pending  In Progress  Done  Total"
         print(f"\n{table_header}\n{(len(table_header))*'='}")
         return(len(table_header))
 
-    def print_body(self, epics, keys, key_space, summaries, summary_space, table_length):
+    def print_body(self: ProgressReport,
+                   epics: List[Issue],
+                   keys: List[str],
+                   key_space: int,
+                   summaries: List[str],
+                   summary_space: int,
+                   table_length: int) -> int:
         project_counts = StateCounts.zero()
         i = 0
         for epic in epics:
@@ -53,7 +62,7 @@ class ProgressReport:
         print(f"{table_length*'='}\n{(key_space+summary_space)*' '}{self.format_stats_str(project_counts)}\n")
         return project_counts
 
-    def table_spacing_calculation(self, keys, summaries):
+    def table_spacing_calculation(self: ProgressReport, keys: List[str], summaries: List[str]) -> Tuple[int, int]:
         space_key = 0
         space_summary = 0
         for i in range(len(keys)):
@@ -63,7 +72,7 @@ class ProgressReport:
                 space_summary = len(summaries[i])
         return(space_key+2, space_summary+2)
 
-    def format_stats_str(self, stats):
+    def format_stats_str(self: ProgressReport, stats: StateCounts) -> str:
         spacing = [7, 13, 6, 7]
         stats_display = ""
         # print("stats:  ", stats)
@@ -73,15 +82,15 @@ class ProgressReport:
 
         return(str(stats_display))
 
-    def get_project_stats(self, project_stats):
+    def get_project_stats(self: ProgressReport, project_stats: StateCounts) -> List[int]:
         stat_types = ["pending", "in_progress", "done", "total"]
-        formated_project_stats = []
+        formated_project_stats: List[int] = []
         for i in range(len(stat_types)):
             type = getattr(project_stats, stat_types[i])
             formated_project_stats.append(type)
         return(formated_project_stats)
 
-    def build_stat(self, base_spacing, data):
+    def build_stat(self: ProgressReport, base_spacing: int, data: int) -> str:
         spacer = base_spacing-len(str(data))
         stat_display = f"{spacer*' '}{data}"
         return(stat_display)

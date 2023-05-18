@@ -4,6 +4,8 @@ import sys
 import os
 import webbrowser
 from datetime import date
+from jira import JIRA
+from typing import List
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
 from jiralib.jira_builder import build_jira, JiraQueries
@@ -22,11 +24,11 @@ from jiralib.cumulative_flow_graph import CumulativeFlowGraph
 @click.option("-j", "--jira-config",    type=click.Path(exists=True))
 @click.option("-p", "--project-config", type=click.Path(exists=True))
 @click.pass_context
-def jira(ctx, verbose, project_config, jira_config):
+def jira(ctx: click.Context, verbose: bool, project_config: click.Path, jira_config: click.Path) -> None:
     ctx.obj = build_report_options(verbose, project_config, jira_config)
 
 
-def build_report_options(verbose: bool, project_config_file, jira_config_file) -> ReportOptions:
+def build_report_options(verbose: bool, project_config_file: click.Path, jira_config_file: click.Path) -> ReportOptions:
     jira_config_file = jira_config_file or os.path.expanduser("~/jiraconfig.yml")
     if verbose:
         print(f"Using jira config file '{jira_config_file}'")
@@ -44,7 +46,7 @@ def build_report_options(verbose: bool, project_config_file, jira_config_file) -
 @jira.command()
 @click.option("-o", "--open-graph", is_flag=True, default=False, help="Open the graph after generation")
 @click.pass_context
-def cumulative_flow(ctx, open_graph):
+def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
     """Creates a cumulative flow graph from the progress log."""
     csv_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/progress.csv"
     png_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/cfd-{str(date.today())}.png"
@@ -54,14 +56,14 @@ def cumulative_flow(ctx, open_graph):
 @jira.command()
 @click.option("-s", "--subject", default="")
 @click.pass_context
-def epic_summary(ctx, subject):
+def epic_summary(ctx: click.Context, subject: str) -> None:
     """Report on stories within epics."""
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
     query = JiraQueries(jira)
     EpicReport(ctx.obj, query).run(subject)
 
 
-def add_fix_version(jira, issue_keys, new_fix_version):
+def add_fix_version(jira: JIRA, issue_keys: List[str], new_fix_version: str) -> None:
     for key in issue_keys:
         issue = JiraIssue(jira.issue(key, expand="changelog"))
         if new_fix_version in issue.fix_versions():
@@ -76,7 +78,7 @@ def add_fix_version(jira, issue_keys, new_fix_version):
 @click.option("-f", "--update-fix-version", is_flag=False, type=click.STRING, help="Update issue with specified fix version")
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
-def issue(ctx, open, update_fix_version, issue_keys):
+def issue(ctx: click.Context, open: bool, update_fix_version: str, issue_keys: List[str]) -> None:
     """Report on issue detail."""
     if not issue_keys:
         sys.exit("issue key required")
@@ -95,7 +97,7 @@ def issue(ctx, open, update_fix_version, issue_keys):
 @click.option("-g", "--graph", is_flag=True, default=False, help="Generate cumulative flow graph")
 @click.argument("label")
 @click.pass_context
-def progress(ctx, graph, label):
+def progress(ctx: click.Context, graph: bool, label: str) -> None:
     """Report on progress for a project."""
     csv_file = f"{ctx.obj.report_dir}/{label}/progress.csv"
     if graph:
@@ -112,7 +114,7 @@ def progress(ctx, graph, label):
 @click.option("-t", "--no-tasks", is_flag=True, default=False, help="Exclude tasks")
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
-def release(ctx, fix_version, no_tasks, issue_keys):
+def release(ctx: click.Context, fix_version: str, no_tasks: bool, issue_keys: List[str]) -> None:
     """Describes a list of tickets as release notes"""
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
 
@@ -133,7 +135,7 @@ def release(ctx, fix_version, no_tasks, issue_keys):
 @click.option("-t", "--to",   "to_date",   type=click.DateTime(formats=["%Y-%m-%d"]),
               help="include issues resolved before this date")
 @click.pass_context
-def resolved(ctx, days, from_date, to_date):
+def resolved(ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime) -> None:
     """Report on recently closed issues."""
     csv_file = f"{ctx.obj.report_dir}/resolved.csv"
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
@@ -149,7 +151,7 @@ def resolved(ctx, days, from_date, to_date):
 @jira.command()
 @click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
 @click.pass_context
-def working(ctx, group):
+def working(ctx: click.Context, group: bool):
     """Report on issues currently in progress."""
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
     query = JiraQueries(jira)
@@ -159,7 +161,7 @@ def working(ctx, group):
 @jira.command()
 @click.argument("label")
 @click.pass_context
-def epicissues(ctx, label):
+def epicissues(ctx: click.Context, label: str):
     """Generate jql to search issues for epics with a given label"""
     jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
     issues = JiraQueries(jira).search_for_issues(f"labels = {label} order by key")
