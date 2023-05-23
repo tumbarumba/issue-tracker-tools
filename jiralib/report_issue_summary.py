@@ -53,19 +53,22 @@ class IssueSummaryReport:
             all_durations = self.collect_durations(projects)
             print_heading("All Projects")
             print_statistics("all issues", all_durations)
-
+            print("")
+            print(" Projects by issue counts:")
             total_count = len(all_durations)
             for project_label in sorted(projects):
                 project_count = len(projects[project_label].durations)
-                print(f" {project_count:3} ({project_count / total_count * 100:2.0f}%): {project_label}")
-
-            print(" issue durations")
+                print(f" {project_count:3} ({project_count / total_count * 100:3.0f}%): {project_label}")
+            print(" --------------------")
+            print(f" {total_count:3} (100%): Total")
+            print("")
+            print(" Projects by issue durations:")
             total_duration = sum(all_durations)
             for project_label in sorted(projects):
                 project_duration = sum(projects[project_label].durations)
-                print(f"  {project_duration:6.2f} ({project_duration / total_duration * 100:3.0f}%): {project_label}")
+                print(f" {project_duration:5.1f} ({project_duration / total_duration * 100:3.0f}%): {project_label}")
             print(" --------------------")
-            print(f"  {total_duration:6.2f} (100%): Total")
+            print(f" {total_duration:5.1f} (100%): Total")
 
     def build_projects(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> Dict[str, Project]:
         projects: Dict[str, Project] = {}
@@ -118,10 +121,10 @@ def print_heading(heading) -> None:
 
 def print_statistics(title: str, durations: List[float]) -> None:
     print(f"Statistics: {title}")
+    print(f" issue count:    : {len(durations):2}")
+    print(f" lead time total : {sum(durations):5.2f}")
     print(f" lead time mean  : {mean(durations):5.2f}")
     print(f" lead time median: {median(durations):5.2f}")
-    print(f" lead time total : {sum(durations):5.2f}")
-    print(f" issue count:    : {len(durations):2}")
 
 
 def project_for(labels: List[str]) -> str:
