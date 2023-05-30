@@ -3,10 +3,9 @@ from typing import Dict, List, Set
 import csv
 import sys
 import datetime
-from .jira_builder import JiraQueries
-from .jira_issue import JiraIssue
+
+from .jira_ext import JiraServer, JiraIssue
 from .report_issue_summary import IssueSummaryReport
-from jira import JIRA
 
 
 this = sys.modules[__name__]
@@ -14,16 +13,15 @@ this.date_source = datetime.date
 
 
 class ResolvedReport:
-    def __init__(self: ResolvedReport, opts: Dict[object], jira: JIRA):
+    def __init__(self: ResolvedReport, opts: Dict[object], jira: JiraServer):
         self.opts = opts
         self.jira = jira
-        self.query = JiraQueries(jira)
 
     def run(self: ResolvedReport, days: int, user_from_date: str, user_to_date: str, csv_file: str) -> None:
         from_date = user_from_date or jira_from_date_days_ago(days)
         to_date = user_to_date or jira_to_date()
         print(f"Resolved issues after {from_date} and before {to_date}\n")
-        report_issues = list(map(JiraIssue, self.query.get_resolved_issues(from_date, to_date)))
+        report_issues = self.jira.query_resolved_issues(from_date, to_date)
 
         update_issue_store(report_issues, csv_file)
 
@@ -58,7 +56,7 @@ def save_new_issues(csv_file: str, new_issues: List[JiraIssue]) -> None:
         for issue in new_issues:
             rowdata = {
                 "Key":      issue.key,
-                "Epic":     issue.epic_key(),
+                "Epic":     issue.epic_key,
                 "Status":   issue.status,
                 "Summary":  issue.summary,
                 "Started":  issue.start_time(),

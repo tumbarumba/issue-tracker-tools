@@ -3,7 +3,7 @@ import pytz
 import textwrap
 from unittest.mock import Mock
 
-from jiralib.jira_issue import StateCounts, JiraEpic
+from jiralib.jira_ext import StateCounts, JiraEpic
 from jiralib.report_progress import store_project_counts
 
 
@@ -11,7 +11,7 @@ def test_epics_with_no_children_expect_10_stories_by_default():
     epic = mock_epic()
     jira = mock_jira([], [])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(10, 0, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -21,19 +21,19 @@ def test_epic_with_estimated_children_comment_but_no_children_uses_estimate_comm
     epic = mock_epic()
     jira = mock_jira([], [mock_comment("Expected size: 5")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(5, 0, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
 
 
-def test_epic_with_less_childen_than_estimate_will_use_estimate():
+def test_epic_with_less_children_than_estimate_will_use_estimate():
     epic = mock_epic()
     jira = mock_jira(
         [mock_story("Backlog")],
         [mock_comment("Expected size: 2")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(2, 0, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -45,7 +45,7 @@ def test_epic_with_more_childen_than_estimate_will_use_child_count():
         [mock_story("Backlog"), mock_story("Backlog"), mock_story("Backlog")],
         [mock_comment("Expected size: 2")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(3, 0, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -57,7 +57,7 @@ def test_epic_completed_stories():
         [mock_story("Done"), mock_story("Done")],
         [mock_comment("Expected size: 3")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(0, 0, 2)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -69,7 +69,7 @@ def test_epic_in_progress_stories():
         [mock_story("In Progress"), mock_story("In Review"), mock_story("Awaiting Merge"), mock_story("Under Test")],
         [mock_comment("Expected size: 4")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(0, 4, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -81,7 +81,7 @@ def test_epic_done_stories():
         [mock_story("Done"), mock_story("Done"), mock_story("Done"), mock_story("Awaiting Demo")],
         [mock_comment("Expected size: 3")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(0, 0, 4)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -93,7 +93,7 @@ def test_epic_closed_duplicate_stories_are_ignored():
         [mock_story("Duplicate"), mock_story("Closed")],
         [mock_comment("Expected size: 3")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(3, 0, 0)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -105,7 +105,7 @@ def test_epic_in_done_state_will_ignore_estimate():
         [mock_story("Done")],
         [mock_comment("Expected size: 2")])
 
-    actual = JiraEpic.create(epic, jira).state_counts
+    actual = JiraEpic(epic, jira).state_counts
 
     expected = StateCounts(0, 0, 1)
     assert actual == expected, f"expected {expected}, got {actual}"
@@ -171,16 +171,22 @@ def mock_epic(status="To Do"):
     epic = Mock()
     epic.key = "dummy-key"
     epic.changelog.histories = []
-    epic.raw = {"fields": {"customfield_10102": {"value": status}}}
+    epic.epic_status = status
     epic.fields.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
     epic.fields.resolutiondate = None
+    epic.raw = {"fields": {"epic_status_field_id": {"value": status}}}
     return epic
 
 
-def mock_jira(issues=[], comments=[]):
+def mock_jira(issues=(), comments=()):
     jira = Mock()
-    jira.search_issues.return_value = issues
-    jira.comments.return_value = comments
+    jira.custom_fields = {
+        "Epic Link":    "epic_link_field_id",
+        "Epic Status":  "epic_status_field_id",
+        "Rank":         "rank_field_id"
+    }
+    jira.query_issues_in_epic.return_value = list(issues)
+    jira.comments.return_value = list(comments)
     return jira
 
 
@@ -192,6 +198,6 @@ def mock_comment(comment_body):
 
 def mock_story(status):
     story = Mock()
-    story.fields.status.name = status
+    story.status = status
     story.fields.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
     return story

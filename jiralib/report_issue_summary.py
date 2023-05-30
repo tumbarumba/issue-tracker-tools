@@ -4,8 +4,8 @@ import sys
 import datetime
 from statistics import mean, median
 from itertools import groupby
-from jira import Issue, JIRA
-from .jira_issue import JiraIssue
+
+from jiralib.jira_ext import JiraIssue, JiraEpic, JiraServer
 
 this = sys.modules[__name__]
 this.date_source = datetime.date
@@ -24,19 +24,19 @@ class Project:
         self.epics: Dict[str, EpicIssues] = {}
         self.durations: List[float] = []
 
-    def add_epic(self: Project, epic: Issue, issues: List[JiraIssue]) -> None:
-        epic_issues = EpicIssues(epic.key, epic.fields.summary, issues)
+    def add_epic(self: Project, epic: JiraEpic, issues: List[JiraIssue]) -> None:
+        epic_issues = EpicIssues(epic.key, epic.summary, issues)
         self.epics[epic.key] = epic_issues
         self.durations.extend(list(map(lambda issue: issue.duration, issues)))
 
 
 class IssueSummaryReport:
-    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JIRA, show_stats: bool):
+    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JiraServer, show_stats: bool):
         self.verbose: bool = opts.verbose
         self.show_stats: bool = show_stats
-        self.jira: JIRA = jira
+        self.jira: JiraServer = jira
         self.type_display: Dict[str, str] = {
-            issuetype["name"]: issuetype["display"] for index, issuetype in enumerate(opts.jira_config.issuetypes)
+            issue_type["name"]: issue_type["display"] for index, issue_type in enumerate(opts.jira_config.issuetypes)
         }
 
     def run(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> None:
@@ -72,10 +72,10 @@ class IssueSummaryReport:
 
     def build_projects(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> Dict[str, Project]:
         projects: Dict[str, Project] = {}
-        report_issues.sort(key=lambda issue: issue.epic_key())
-        for epic_key, epic_issues in groupby(report_issues, lambda issue: issue.epic_key()):
-            epic: Issue = self.jira.issue(epic_key)
-            project_label = project_for(epic.fields.labels)
+        report_issues.sort(key=lambda issue: issue.epic_key)
+        for epic_key, epic_issues in groupby(report_issues, lambda issue: issue.epic_key):
+            epic: JiraEpic = self.jira.jira_epic(epic_key)
+            project_label = project_for(epic.raw_issue.fields.labels)
             project = projects.get(project_label) or Project(project_label)
             projects[project_label] = project
             project.add_epic(epic, list(epic_issues))
@@ -97,12 +97,12 @@ class IssueSummaryReport:
             ei: EpicIssues = project.epics[epic_key]
             print(f"Epic {ei.epic_key}: {ei.epic_summary}")
             for issue in ei.issues:
-                issueicon = self.type_display[issue.jira_issue.fields.issuetype.name]
+                issue_icon = self.type_display[issue.issue_type]
                 if self.show_stats:
                     duration = f"{issue.duration:5.2f} "
                 else:
                     duration = ""
-                print(f"[{duration}{issueicon}] {issue.key}: {issue.summary}")
+                print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary}")
                 if self.verbose:
                     print(f"           started:   {issue.start_time()}")
                     print(f"           completed: {issue.completed_time()}")

@@ -4,12 +4,10 @@ import sys
 import os
 import webbrowser
 from datetime import date
-from jira import JIRA
 from typing import List
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
-from jiralib.jira_builder import build_jira, JiraQueries
-from jiralib.jira_issue import JiraIssue
+from jiralib.jira_ext import JiraServer
 from jiralib.report_epics import EpicReport
 from jiralib.report_progress import ProgressReport
 from jiralib.report_resolved import ResolvedReport
@@ -58,14 +56,13 @@ def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
 @click.pass_context
 def epic_summary(ctx: click.Context, subject: str) -> None:
     """Report on stories within epics."""
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    query = JiraQueries(jira)
-    EpicReport(ctx.obj, query).run(subject)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    EpicReport(ctx.obj, jira).run(subject)
 
 
-def add_fix_version(jira: JIRA, issue_keys: List[str], new_fix_version: str) -> None:
+def add_fix_version(jira: JiraServer, issue_keys: List[str], new_fix_version: str) -> None:
     for key in issue_keys:
-        issue = JiraIssue(jira.issue(key, expand="changelog"))
+        issue = jira.jira_issue(key)
         if new_fix_version in issue.fix_versions():
             print(f"{issue.key}: already assigned to {new_fix_version}")
         else:
@@ -83,7 +80,7 @@ def issue(ctx: click.Context, open: bool, update_fix_version: str, issue_keys: L
     if not issue_keys:
         sys.exit("issue key required")
 
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
 
     if open:
         webbrowser.open(f"{ctx.obj.jira_config.url}/browse/{issue_keys[0]}")
@@ -104,7 +101,7 @@ def progress(ctx: click.Context, graph: bool, label: str) -> None:
         png_file = f"{ctx.obj.report_dir}/{label}/cfd-{str(date.today())}.png"
     else:
         png_file = None
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
     ProgressReport(ctx.obj, jira).run(label, csv_file, png_file)
 
 
@@ -116,10 +113,10 @@ def progress(ctx: click.Context, graph: bool, label: str) -> None:
 @click.pass_context
 def release(ctx: click.Context, fix_version: str, no_tasks: bool, issue_keys: List[str]) -> None:
     """Describes a list of tickets as release notes"""
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
 
     if fix_version:
-        fix_issues = JiraQueries(jira).get_fix_version_issues(fix_version)
+        fix_issues = jira.query_fix_version(fix_version)
         issue_keys = [issue.key for issue in fix_issues]
 
     if not issue_keys:
@@ -138,7 +135,7 @@ def release(ctx: click.Context, fix_version: str, no_tasks: bool, issue_keys: Li
 def resolved(ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime) -> None:
     """Report on recently closed issues."""
     csv_file = f"{ctx.obj.report_dir}/resolved.csv"
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
 
     if from_date:
         from_date = from_date.date()
@@ -151,20 +148,19 @@ def resolved(ctx: click.Context, days: int, from_date: click.DateTime, to_date: 
 @jira.command()
 @click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
 @click.pass_context
-def working(ctx: click.Context, group: bool):
+def working(ctx: click.Context, group: bool) -> None:
     """Report on issues currently in progress."""
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    query = JiraQueries(jira)
-    WorkingReport(ctx.obj, query).run(group)
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    WorkingReport(ctx.obj, jira).run(group)
 
 
 @jira.command()
 @click.argument("label")
 @click.pass_context
-def epicissues(ctx: click.Context, label: str):
+def epicissues(ctx: click.Context, label: str) -> None:
     """Generate jql to search issues for epics with a given label"""
-    jira = build_jira(ctx.obj.verbose, ctx.obj.jira_config)
-    issues = JiraQueries(jira).search_for_issues(f"labels = {label} order by key")
+    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    issues = jira.query_jql_issues(f"labels = {label} order by key")
     keys = [issue.key for issue in issues]
     print(f"'Epic Link' in ({', '.join(keys)})")
 

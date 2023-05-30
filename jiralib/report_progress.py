@@ -4,19 +4,16 @@ from datetime import date
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 from pathlib import Path
-from jira import Issue, JIRA
 import csv
 
-from .jira_issue import JiraEpic, StateCounts
-from .jira_builder import JiraQueries
 from .cumulative_flow_graph import CumulativeFlowGraph
+from .jira_ext import JiraServer, JiraEpic, StateCounts
 
 
 class ProgressReport:
-    def __init__(self: ProgressReport, opts: Dict[object], jira: JIRA):
+    def __init__(self: ProgressReport, opts: Dict[object], jira: JiraServer):
         self.verbose: bool = opts.verbose
-        self.jira: JIRA = jira
-        self.query: JiraQueries = JiraQueries(jira)
+        self.jira: JiraServer = jira
 
     def run(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
         self.report_cumulative_flow(label, csv_file, png_file)
@@ -24,9 +21,9 @@ class ProgressReport:
     def report_cumulative_flow(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
         today = str(date.today())
         print(f"Label: {label}\nDate: {today}")
-        epics: List[Issue] = self.query.get_project_epics(label)
+        epics: List[JiraEpic] = self.jira.query_project_epics(label)
         keys: List[str] = [epic.key for epic in epics]
-        summaries: List[str] = [epic.fields.summary for epic in epics]
+        summaries: List[str] = [epic.summary for epic in epics]
 
         key_space, summary_space = self.table_spacing_calculation(keys, summaries)
         table_length = self.print_header(key_space, summary_space)
@@ -43,7 +40,7 @@ class ProgressReport:
         return(len(table_header))
 
     def print_body(self: ProgressReport,
-                   epics: List[Issue],
+                   epics: List[JiraEpic],
                    keys: List[str],
                    key_space: int,
                    summaries: List[str],
@@ -52,10 +49,9 @@ class ProgressReport:
         project_counts = StateCounts.zero()
         i = 0
         for epic in epics:
-            epic_counts = JiraEpic.create(epic, self.jira).state_counts
-            project_counts += epic_counts
+            project_counts += epic.state_counts
             key_epic_display = f"{keys[i]}{(key_space-len(keys[i]))*' '}{summaries[i]}{(summary_space-len(summaries[i]))*' '}"
-            stats_display = self.format_stats_str(epic_counts)
+            stats_display = self.format_stats_str(epic.state_counts)
             print(f"{key_epic_display}{stats_display}")
             i += 1
 

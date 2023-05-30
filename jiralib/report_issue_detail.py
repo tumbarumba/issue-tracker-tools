@@ -4,38 +4,41 @@ from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
-from jira import JIRA, JIRAError
 
-from .jira_issue import JiraIssue
+from .jira_ext import JiraServer, JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self: IssueDetailReport, opts: Dict[object], jira: JIRA):
+    def __init__(self: IssueDetailReport, opts: Dict[object], jira: JiraServer):
         self.verbose: bool = opts.verbose
         self.jira = jira
 
     def run(self: IssueDetailReport, issue_keys: List[str]) -> None:
         try:
-            for issue_key in issue_keys:
-                issue = JiraIssue(self.jira.issue(issue_key, expand="changelog"))
+            for issue in self.jira.query_issue_keys(issue_keys):
                 self.report_issue_detail(issue)
                 print("")
-        except JIRAError as e:
+        except Exception as e:
             print(f"Failed: {e}")
 
     def report_issue_detail(self: IssueDetailReport, issue: JiraIssue):  # noqa: C901
-        is_epic = issue.jira_issue.fields.issuetype.name == "Epic"
+        if self.verbose:
+            print(" json dump:")
+            serialised = jsonpickle.encode(issue.raw_issue)
+            print(json.dumps(json.loads(serialised), indent=2))
+
+        is_epic = issue.issue_type == "Epic"
 
         print(f"{issue.key}: {issue.summary}")
-        print(f" type:       {issue.jira_issue.fields.issuetype.name}")
+        print(f" type:       {issue.issue_type}")
         print(f" status:     {issue.status}")
         if is_epic:
-            print(f" epic status:{issue.epic_status()}")
-        if "parent" in issue.jira_issue.raw["fields"]:
-            parent = issue.jira_issue.fields.parent
+            print(f" epic status:{issue.epic_status}")
+        if "parent" in issue.raw_issue.raw["fields"]:
+            parent = issue.raw_issue.fields.parent
             print(f" parent:     {parent.key} - {parent.fields.summary}")
-        if issue.epic_key():
-            epic = self.jira.issue(issue.epic_key())
+        if issue.epic_key:
+            epic = self.jira.issue(issue.epic_key)
             print(f" epic:       {epic.key}: {epic.fields.summary}")
         if issue.fix_versions():
             print(f" fixed:      {', '.join(issue.fix_versions())}")
@@ -52,24 +55,26 @@ class IssueDetailReport:
         else:
             print(" duration:   n/a")
 
-        creator_initials = initials_for(issue.jira_issue.fields.creator.displayName)
-        print(f" history:    {issue.jira_issue.fields.created} [{creator_initials}]: Created")
-        for history in issue.jira_issue.changelog.histories:
+        creator_initials = initials_for(issue.raw_issue.fields.creator.displayName)
+        print(f" history:    {issue.raw_issue.fields.created} [{creator_initials}]: Created")
+        for history in issue.raw_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
                     initials = initials_for(history.author.displayName)
                     print(f"             {history.created} [{initials}]: {item.fromString} => {item.toString}")
 
-        print(" comments:")
-        for comment in issue.jira_issue.fields.comment.comments:
-            print(formatted_comment(comment))
+        comments = self.jira.comments(issue.raw_issue.key)
+        if comments:
+            print(" comments:")
+            for comment in comments:
+                print(formatted_comment(comment))
 
-        if issue.jira_issue.fields.subtasks:
+        if issue.raw_issue.fields.subtasks:
             print(" subtasks:")
-            for subtask in issue.jira_issue.fields.subtasks:
+            for subtask in issue.raw_issue.fields.subtasks:
                 print(f"             {subtask.key}: {subtask.fields.summary}")
 
-            for subtask in issue.jira_issue.fields.subtasks:
+            for subtask in issue.raw_issue.fields.subtasks:
                 print("\n===\n")
                 self.report_issue_detail(subtask.key)
 
@@ -79,21 +84,14 @@ class IssueDetailReport:
             for story in stories:
                 print(f"             {story.key}: {story.fields.summary}")
 
-        if self.verbose:
-            print(" json dump:")
-            serialised = jsonpickle.encode(issue.jira_issue)
-            print(json.dumps(json.loads(serialised), indent=2))
-
 
 def initials_for(full_name: str) -> str:
     return "".join(name[0].upper() for name in full_name.split())
 
 
-git_comment_pattern = re.compile(r"^\[([\w ]+)\|.+\{quote\}(.*)\{quote\}$")
-
-
 def formatted_comment(comment: str) -> str:
     if comment.author.name == "gitlab-jira":
+        git_comment_pattern = re.compile(r"^\[([\w ]+)\|.+\{quote\}(.*)\{quote\}$")
         match = git_comment_pattern.match(comment.body)
         if match:
             return f"             {comment.created} [git: {initials_for(match.group(1))}]: {match.group(2)}"
