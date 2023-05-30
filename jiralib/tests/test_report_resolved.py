@@ -2,7 +2,7 @@ import pytest
 from datetime import date
 from unittest.mock import Mock
 
-from . import report_resolved as rr
+from jiralib import report_resolved as rr
 
 DATE_OF_TEST = date(2022, 12, 23)
 

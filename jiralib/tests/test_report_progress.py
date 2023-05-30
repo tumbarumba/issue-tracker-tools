@@ -3,8 +3,8 @@ import pytz
 import textwrap
 from unittest.mock import Mock
 
-from .jira_issue import StateCounts, JiraEpic
-from .report_progress import store_project_counts
+from jiralib.jira_issue import StateCounts, JiraEpic
+from jiralib.report_progress import store_project_counts
 
 
 def test_epics_with_no_children_expect_10_stories_by_default():

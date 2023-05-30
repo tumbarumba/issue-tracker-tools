@@ -1,4 +1,4 @@
-from . import report_issue_summary as ris
+from jiralib import report_issue_summary as ris
 
 
 def test_projects_without_labels_are_unplanned():
