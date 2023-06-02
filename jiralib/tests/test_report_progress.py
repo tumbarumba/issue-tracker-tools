@@ -1,9 +1,12 @@
+from typing import List
 import datetime
 import pytz
 import textwrap
+from jira import Issue
+from jira.resources import Comment
 from unittest.mock import Mock
 
-from jiralib.jira_ext import StateCounts, JiraEpic
+from jiralib.jira_ext import StateCounts, JiraEpic, JiraServer, JiraIssue
 from jiralib.report_progress import store_project_counts
 
 
@@ -12,73 +15,69 @@ def assert_equal_counts(actual: StateCounts, expected: StateCounts):
 
 
 def test_epics_with_no_children_expect_10_stories_by_default():
-    epic = mock_epic()
-    jira = mock_jira([], [])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(10, 0, 0))
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server([], []))
+    assert_equal_counts(epic.state_counts, StateCounts(10, 0, 0))
 
 
 def test_epic_with_estimated_children_comment_but_no_children_uses_estimate_comment():
-    epic = mock_epic()
-    jira = mock_jira([], [mock_comment("Expected size: 5")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(5, 0, 0))
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server([], [mock_comment("Expected size: 5")]))
+    assert_equal_counts(epic.state_counts, StateCounts(5, 0, 0))
 
 
 def test_epic_with_less_children_than_estimate_will_use_estimate():
-    epic = mock_epic()
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server(
         [mock_story("Backlog")],
-        [mock_comment("Expected size: 2")])
-
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(2, 0, 0))
+        [mock_comment("Expected size: 2")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(2, 0, 0))
 
 
 def test_epic_with_more_children_than_estimate_will_use_child_count():
-    epic = mock_epic()
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server(
         [mock_story("Backlog"), mock_story("Backlog"), mock_story("Backlog")],
-        [mock_comment("Expected size: 2")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(3, 0, 0))
+        [mock_comment("Expected size: 2")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(3, 0, 0))
 
 
 def test_epic_completed_stories():
-    epic = mock_epic("Done")
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic("Done"), mock_jira_server(
         [mock_story("Done"), mock_story("Done")],
-        [mock_comment("Expected size: 3")])
-
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(0, 0, 2))
+        [mock_comment("Expected size: 3")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(0, 0, 2))
 
 
 def test_epic_in_progress_stories():
-    epic = mock_epic()
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server(
         [mock_story("In Progress"), mock_story("In Review"), mock_story("Awaiting Merge"), mock_story("Under Test")],
-        [mock_comment("Expected size: 4")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(0, 4, 0))
+        [mock_comment("Expected size: 4")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(0, 4, 0))
 
 
 def test_epic_done_stories():
-    epic = mock_epic()
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server(
         [mock_story("Done"), mock_story("Done"), mock_story("Done"), mock_story("Awaiting Demo")],
-        [mock_comment("Expected size: 3")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(0, 0, 4))
+        [mock_comment("Expected size: 3")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(0, 0, 4))
 
 
 def test_epic_closed_duplicate_stories_are_ignored():
-    epic = mock_epic()
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic(), mock_jira_server(
         [mock_story("Duplicate"), mock_story("Closed")],
-        [mock_comment("Expected size: 3")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(3, 0, 0))
+        [mock_comment("Expected size: 3")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(3, 0, 0))
 
 
 def test_epic_in_done_state_will_ignore_estimate():
-    epic = mock_epic("Done")
-    jira = mock_jira(
+    epic = JiraEpic(mock_raw_epic("Done"), mock_jira_server(
         [mock_story("Done")],
-        [mock_comment("Expected size: 2")])
-    assert_equal_counts(JiraEpic(epic, jira).state_counts, StateCounts(0, 0, 1))
+        [mock_comment("Expected size: 2")]
+    ))
+    assert_equal_counts(epic.state_counts, StateCounts(0, 0, 1))
 
 
 def test_can_add_state_counts():
@@ -137,7 +136,7 @@ def setup_initial_csv(csv_path, content):
         f.write(content)
 
 
-def mock_epic(status="To Do"):
+def mock_raw_epic(status="To Do") -> Issue:
     epic = Mock()
     epic.key = "dummy-key"
     epic.changelog.histories = []
@@ -148,8 +147,8 @@ def mock_epic(status="To Do"):
     return epic
 
 
-def mock_jira(issues=(), comments=()):
-    jira = Mock()
+def mock_jira_server(issues: List[JiraIssue] = (), comments: List[Comment] = ()) -> JiraServer:
+    jira = Mock(spec=JiraServer)
     jira.custom_fields = {
         "Epic Link":    "epic_link_field_id",
         "Epic Status":  "epic_status_field_id",
@@ -160,14 +159,14 @@ def mock_jira(issues=(), comments=()):
     return jira
 
 
-def mock_comment(comment_body):
-    comment = Mock()
+def mock_comment(comment_body: str) -> Comment:
+    comment = Mock(spec=Comment)
     comment.body = comment_body
     return comment
 
 
-def mock_story(status):
-    story = Mock()
+def mock_story(status: str) -> JiraIssue:
+    story = Mock(spec=JiraIssue)
     story.status = status
-    story.fields.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
+    story.created = datetime.datetime.now(tz=pytz.UTC).isoformat()
     return story

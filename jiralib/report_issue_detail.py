@@ -63,7 +63,7 @@ class IssueDetailReport:
                     initials = initials_for(history.author.displayName)
                     print(f"             {history.created} [{initials}]: {item.fromString} => {item.toString}")
 
-        comments = self.jira.comments(issue.raw_issue.key)
+        comments = self.jira.comments(issue.key)
         if comments:
             print(" comments:")
             for comment in comments:
