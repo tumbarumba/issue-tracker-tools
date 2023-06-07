@@ -12,10 +12,17 @@ this.date_source = datetime.date
 
 
 class EpicIssues:
-    def __init__(self: EpicIssues, epic_key: str, epic_summary: str, issues: List[JiraIssue]):
-        self.epic_key: str = epic_key
-        self.epic_summary: str = epic_summary
-        self.issues: List[JiraIssue] = issues
+    def __init__(self: EpicIssues, epic: JiraEpic, issues: List[JiraIssue]):
+        self.epic = epic
+        self.issues: List[JiraIssue] = sorted(issues, key=lambda issue: issue.key)
+
+    @property
+    def epic_key(self: EpicIssues) -> str:
+        return self.epic.key
+
+    @property
+    def epic_summary(self: EpicIssues) -> str:
+        return self.epic.summary
 
 
 class Project:
@@ -25,15 +32,15 @@ class Project:
         self.durations: List[float] = []
 
     def add_epic(self: Project, epic: JiraEpic, issues: List[JiraIssue]) -> None:
-        epic_issues = EpicIssues(epic.key, epic.summary, issues)
-        self.epics[epic.key] = epic_issues
+        self.epics[epic.key] = EpicIssues(epic, issues)
         self.durations.extend(list(map(lambda issue: issue.duration, issues)))
 
 
 class IssueSummaryReport:
-    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JiraServer, show_stats: bool):
+    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JiraServer, show_stats: bool, markdown: bool):
         self.verbose: bool = opts.verbose
         self.show_stats: bool = show_stats
+        self.markdown: bool = markdown
         self.jira: JiraServer = jira
         self.type_display: Dict[str, str] = {
             issue_type["name"]: issue_type["display"] for index, issue_type in enumerate(opts.jira_config.issuetypes)
@@ -51,7 +58,7 @@ class IssueSummaryReport:
 
         if self.show_stats:
             all_durations = self.collect_durations(projects)
-            print_heading("All Projects")
+            self.print_heading_l1("All Projects")
             print_statistics("all issues", all_durations)
             print("")
             print(" Projects by issue counts:")
@@ -91,18 +98,13 @@ class IssueSummaryReport:
         return all_durations
 
     def report_project(self: IssueSummaryReport, project: Project) -> None:
-        print_heading(f"Project: {project.label}")
+        self.print_heading_l1(f"Project: {project.label}")
 
         for epic_key in sorted(project.epics):
             ei: EpicIssues = project.epics[epic_key]
-            print(f"Epic {ei.epic_key}: {ei.epic_summary}")
+            self.print_heading_epic(ei.epic)
             for issue in ei.issues:
-                issue_icon = self.type_display[issue.issue_type]
-                if self.show_stats:
-                    duration = f"{issue.duration:5.2f} "
-                else:
-                    duration = ""
-                print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary}")
+                self.print_issue(issue)
                 if self.verbose:
                     print(f"           started:   {issue.start_time()}")
                     print(f"           completed: {issue.completed_time()}")
@@ -112,11 +114,33 @@ class IssueSummaryReport:
             print_statistics(f"project {project.label}", project.durations)
             print()
 
+    def print_heading_l1(self: IssueSummaryReport, heading: str) -> None:
+        if self.markdown:
+            print(f"## {heading}")
+        else:
+            print(heading)
+            print(len(heading) * "=")
 
-def print_heading(heading) -> None:
-    print(heading)
-    print(len(heading) * "=")
-    print()
+        print()
+
+    def print_heading_epic(self: IssueSummaryReport, epic: JiraEpic) -> None:
+        if self.markdown:
+            print(f"### {epic.summary} ([{epic.key}]({epic.url}))")
+            print()
+        else:
+            print(f"Epic {epic.key}: {epic.summary}")
+
+    def print_issue(self: IssueSummaryReport, issue: JiraIssue) -> None:
+        issue_icon = self.type_display[issue.issue_type]
+
+        if self.markdown:
+            print(f"* {issue_icon} [{issue.key}]({issue.url}): {issue.summary}")
+        else:
+            if self.show_stats:
+                duration = f"{issue.duration:5.2f} "
+            else:
+                duration = ""
+            print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary}")
 
 
 def print_statistics(title: str, durations: List[float]) -> None:

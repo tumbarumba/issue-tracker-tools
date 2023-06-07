@@ -109,9 +109,10 @@ def progress(ctx: click.Context, graph: bool, label: str) -> None:
 @click.option("-f", "--fix-version", is_flag=False, type=click.STRING, default=None,
               help="Include all issues with this fix version")
 @click.option("-t", "--no-tasks", is_flag=True, default=False, help="Exclude tasks")
+@click.option("-m", "--markdown", is_flag=True, default=False, help="Output report as markdown")
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
-def release(ctx: click.Context, fix_version: str, no_tasks: bool, issue_keys: List[str]) -> None:
+def release(ctx: click.Context, fix_version: str, no_tasks: bool, markdown: bool, issue_keys: List[str]) -> None:
     """Describes a list of tickets as release notes"""
     jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
 
@@ -122,7 +123,7 @@ def release(ctx: click.Context, fix_version: str, no_tasks: bool, issue_keys: Li
     if not issue_keys:
         sys.exit("issue keys required for release report")
 
-    ReleaseNotesReport(ctx.obj, jira, no_tasks).run(issue_keys)
+    ReleaseNotesReport(ctx.obj, jira, no_tasks, markdown).run(issue_keys)
 
 
 @jira.command()

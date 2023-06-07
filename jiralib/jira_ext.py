@@ -188,6 +188,10 @@ class JiraIssue:
     def rank(self) -> str:
         return self.raw_issue.raw['fields'][self.custom_fields["Rank"]]
 
+    @property
+    def url(self) -> str:
+        return self.raw_issue.permalink()
+
 
 class StateCounts:
     def __init__(self, pending, in_progress, done):
