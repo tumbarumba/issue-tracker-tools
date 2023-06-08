@@ -2,11 +2,12 @@ from __future__ import annotations
 from typing import Dict, List
 from itertools import groupby
 
+from .config import ReportOptions
 from .jira_ext import JiraServer, JiraEpic, JiraIssue
 
 
 class WorkingReport:
-    def __init__(self: WorkingReport, opts, jira: JiraServer):
+    def __init__(self: WorkingReport, opts: ReportOptions, jira: JiraServer):
         self.verbose = opts.verbose
         self.jira = jira
         self.type_display = {

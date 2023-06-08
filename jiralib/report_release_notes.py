@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing import Dict, List
+from typing import List
+
+from .config import ReportOptions
 from .jira_ext import JiraServer
 from .report_issue_summary import IssueSummaryReport
 
 
 class ReleaseNotesReport:
-    def __init__(self: ReleaseNotesReport, opts: Dict[object], jira: JiraServer, no_tasks: bool, markdown: bool):
+    def __init__(self: ReleaseNotesReport, opts: ReportOptions, jira: JiraServer, no_tasks: bool, markdown: bool):
         self.opts = opts
         self.jira = jira
         self.no_tasks = no_tasks

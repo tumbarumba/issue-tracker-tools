@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List
+from typing import List
 from dateutil.tz import tzlocal
 import re
 import json
@@ -9,9 +9,9 @@ from .jira_ext import JiraServer, JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self: IssueDetailReport, opts: Dict[object], jira: JiraServer):
-        self.verbose: bool = opts.verbose
+    def __init__(self: IssueDetailReport, jira: JiraServer, verbose: bool):
         self.jira = jira
+        self.verbose: bool = verbose
 
     def run(self: IssueDetailReport, issue_keys: List[str]) -> None:
         try:

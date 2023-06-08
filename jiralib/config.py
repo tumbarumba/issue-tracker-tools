@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Any, Dict
 import os
 import yaml
 
@@ -24,29 +26,33 @@ DEFAULT_ISSUE_TYPES = [
 
 
 class JiraConfig:
-    def __init__(self, jira_config):
-        self.url = jira_config['url']
-        self.statuses = jira_config.get("statuses", DEFAULT_STATUSES)
-        self.issuetypes = jira_config.get("issuetypes", DEFAULT_ISSUE_TYPES)
+    def __init__(self: JiraConfig, jira_config: Dict[str, Any]):
+        self.url: str = jira_config['url']
+        self.statuses: Dict[str, Dict[str, str]] = jira_config.get("statuses", DEFAULT_STATUSES)
+        self.issuetypes: Dict[str, Dict[str, str]] = jira_config.get("issuetypes", DEFAULT_ISSUE_TYPES)
 
 
 class ProjectConfig:
-    def __init__(self, project_config):
-        self.project_name = project_config.get("name", "Unnamed Project")
-        self.project_label = project_config.get("label", "(none)")
-        self.milestones = project_config.get("milestones", [])
-        self.report_dir = project_config.get("report_dir", None)
+    def __init__(self: ProjectConfig, project_config: Dict[str, Any]):
+        self.project_name: str = project_config.get("name", "Unnamed Project")
+        self.project_label: str = project_config.get("label", "(none)")
+        self.milestones: Dict[str, Any] = project_config.get("milestones", [])
+        self.report_dir: str | None = project_config.get("report_dir", None)
 
 
 REPORT_DIR_DEFAULT = "~/jirareports"
 
 
 class ReportOptions(object):
-    def __init__(self, verbose=False, project_config=None, jira_config=None):
-        self.verbose = verbose
-        self.project_config = project_config
-        self.jira_config = jira_config
-        self.report_dir = self.lookup_report_dir()
+    def __init__(
+            self: ReportOptions,
+            verbose: bool = False,
+            project_config: ProjectConfig = None,
+            jira_config: JiraConfig = None):
+        self.verbose: bool = verbose
+        self.project_config: ProjectConfig = project_config
+        self.jira_config: JiraConfig = jira_config
+        self.report_dir: str = self.lookup_report_dir()
 
     def lookup_report_dir(self) -> str:
         dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
@@ -57,7 +63,7 @@ class ReportOptions(object):
         return dir
 
 
-def load_yaml(config_file, key):
+def load_yaml(config_file: str, key: str) -> Dict[str, Any]:
     with open(config_file, 'r') as file:
         config = yaml.safe_load(file)
         return config[key]

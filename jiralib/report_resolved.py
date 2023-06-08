@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Dict, List, Set
+from typing import List, Set
 import csv
 import sys
 import datetime
 
+from .config import ReportOptions
 from .jira_ext import JiraServer, JiraIssue
 from .report_issue_summary import IssueSummaryReport
 
@@ -13,7 +14,7 @@ this.date_source = datetime.date
 
 
 class ResolvedReport:
-    def __init__(self: ResolvedReport, opts: Dict[object], jira: JiraServer):
+    def __init__(self: ResolvedReport, opts: ReportOptions, jira: JiraServer):
         self.opts = opts
         self.jira = jira
 

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from datetime import date
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
@@ -11,9 +11,9 @@ from .jira_ext import JiraServer, JiraEpic, StateCounts
 
 
 class ProgressReport:
-    def __init__(self: ProgressReport, opts: Dict[object], jira: JiraServer):
-        self.verbose: bool = opts.verbose
+    def __init__(self: ProgressReport, jira: JiraServer, verbose: bool):
         self.jira: JiraServer = jira
+        self.verbose: bool = verbose
 
     def run(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
         self.report_cumulative_flow(label, csv_file, png_file)

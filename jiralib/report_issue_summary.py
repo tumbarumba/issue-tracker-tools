@@ -5,7 +5,8 @@ import datetime
 from statistics import mean, median
 from itertools import groupby
 
-from jiralib.jira_ext import JiraIssue, JiraEpic, JiraServer
+from .config import ReportOptions
+from .jira_ext import JiraIssue, JiraEpic, JiraServer
 
 this = sys.modules[__name__]
 this.date_source = datetime.date
@@ -37,7 +38,7 @@ class Project:
 
 
 class IssueSummaryReport:
-    def __init__(self: IssueSummaryReport, opts: Dict[object], jira: JiraServer, show_stats: bool, markdown: bool):
+    def __init__(self: IssueSummaryReport, opts: ReportOptions, jira: JiraServer, show_stats: bool, markdown: bool):
         self.verbose: bool = opts.verbose
         self.show_stats: bool = show_stats
         self.markdown: bool = markdown

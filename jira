@@ -46,9 +46,10 @@ def build_report_options(verbose: bool, project_config_file: click.Path, jira_co
 @click.pass_context
 def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
     """Creates a cumulative flow graph from the progress log."""
-    csv_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/progress.csv"
-    png_file = f"{ctx.obj.report_dir}/{ctx.obj.project_config.project_name}/cfd-{str(date.today())}.png"
-    CumulativeFlowGraph(ctx.obj.project_config, csv_file, png_file).run(open_graph)
+    options: ReportOptions = ctx.obj
+    csv_file = f"{options.report_dir}/{options.project_config.project_name}/progress.csv"
+    png_file = f"{options.report_dir}/{options.project_config.project_name}/cfd-{str(date.today())}.png"
+    CumulativeFlowGraph(options.project_config, csv_file, png_file).run(open_graph)
 
 
 @jira.command()
@@ -56,18 +57,19 @@ def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
 @click.pass_context
 def epic_summary(ctx: click.Context, subject: str) -> None:
     """Report on stories within epics."""
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
-    EpicReport(ctx.obj, jira).run(subject)
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
+    EpicReport(options, server).run(subject)
 
 
-def add_fix_version(jira: JiraServer, issue_keys: List[str], new_fix_version: str) -> None:
+def add_fix_version(server: JiraServer, issue_keys: List[str], new_fix_version: str) -> None:
     for key in issue_keys:
-        issue = jira.jira_issue(key)
-        if new_fix_version in issue.fix_versions():
-            print(f"{issue.key}: already assigned to {new_fix_version}")
+        jira_issue = server.jira_issue(key)
+        if new_fix_version in jira_issue.fix_versions():
+            print(f"{jira_issue.key}: already assigned to {new_fix_version}")
         else:
-            issue.add_fix_version(new_fix_version)
-            print(f"{issue.key}: added version {new_fix_version}")
+            jira_issue.add_fix_version(new_fix_version)
+            print(f"{jira_issue.key}: added version {new_fix_version}")
 
 
 @jira.command()
@@ -80,14 +82,15 @@ def issue(ctx: click.Context, open: bool, update_fix_version: str, issue_keys: L
     if not issue_keys:
         sys.exit("issue key required")
 
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
 
     if open:
-        webbrowser.open(f"{ctx.obj.jira_config.url}/browse/{issue_keys[0]}")
+        webbrowser.open(f"{options.jira_config.url}/browse/{issue_keys[0]}")
     elif update_fix_version:
-        add_fix_version(jira, issue_keys, update_fix_version)
+        add_fix_version(server, issue_keys, update_fix_version)
     else:
-        IssueDetailReport(ctx.obj, jira).run(issue_keys)
+        IssueDetailReport(server, options.verbose).run(issue_keys)
 
 
 @jira.command()
@@ -96,13 +99,14 @@ def issue(ctx: click.Context, open: bool, update_fix_version: str, issue_keys: L
 @click.pass_context
 def progress(ctx: click.Context, graph: bool, label: str) -> None:
     """Report on progress for a project."""
-    csv_file = f"{ctx.obj.report_dir}/{label}/progress.csv"
+    options: ReportOptions = ctx.obj
+    csv_file = f"{options.report_dir}/{label}/progress.csv"
     if graph:
-        png_file = f"{ctx.obj.report_dir}/{label}/cfd-{str(date.today())}.png"
+        png_file = f"{options.report_dir}/{label}/cfd-{str(date.today())}.png"
     else:
         png_file = None
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
-    ProgressReport(ctx.obj, jira).run(label, csv_file, png_file)
+    server = JiraServer(options.verbose, options.jira_config)
+    ProgressReport(server, options.verbose).run(label, csv_file, png_file)
 
 
 @jira.command()
@@ -114,16 +118,17 @@ def progress(ctx: click.Context, graph: bool, label: str) -> None:
 @click.pass_context
 def release(ctx: click.Context, fix_version: str, no_tasks: bool, markdown: bool, issue_keys: List[str]) -> None:
     """Describes a list of tickets as release notes"""
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
 
     if fix_version:
-        fix_issues = jira.query_fix_version(fix_version)
+        fix_issues = server.query_fix_version(fix_version)
         issue_keys = [issue.key for issue in fix_issues]
 
     if not issue_keys:
         sys.exit("issue keys required for release report")
 
-    ReleaseNotesReport(ctx.obj, jira, no_tasks, markdown).run(issue_keys)
+    ReleaseNotesReport(options, server, no_tasks, markdown).run(issue_keys)
 
 
 @jira.command()
@@ -135,15 +140,16 @@ def release(ctx: click.Context, fix_version: str, no_tasks: bool, markdown: bool
 @click.pass_context
 def resolved(ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime) -> None:
     """Report on recently closed issues."""
-    csv_file = f"{ctx.obj.report_dir}/resolved.csv"
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
+    options: ReportOptions = ctx.obj
+    csv_file = f"{options.report_dir}/resolved.csv"
+    server = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
 
     if from_date:
         from_date = from_date.date()
     if to_date:
         to_date = to_date.date()
 
-    ResolvedReport(ctx.obj, jira).run(days, from_date, to_date, csv_file)
+    ResolvedReport(options, server).run(days, from_date, to_date, csv_file)
 
 
 @jira.command()
@@ -151,8 +157,9 @@ def resolved(ctx: click.Context, days: int, from_date: click.DateTime, to_date: 
 @click.pass_context
 def working(ctx: click.Context, group: bool) -> None:
     """Report on issues currently in progress."""
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
-    WorkingReport(ctx.obj, jira).run(group)
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
+    WorkingReport(options, server).run(group)
 
 
 @jira.command()
@@ -160,8 +167,9 @@ def working(ctx: click.Context, group: bool) -> None:
 @click.pass_context
 def epicissues(ctx: click.Context, label: str) -> None:
     """Generate jql to search issues for epics with a given label"""
-    jira = JiraServer(ctx.obj.verbose, ctx.obj.jira_config)
-    issues = jira.query_jql_issues(f"labels = {label} order by key")
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
+    issues = server.query_jql_issues(f"labels = {label} order by key")
     keys = [issue.key for issue in issues]
     print(f"'Epic Link' in ({', '.join(keys)})")
 
