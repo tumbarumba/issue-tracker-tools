@@ -70,10 +70,10 @@ def load_yaml(config_file: str, key: str) -> Dict[str, Any]:
 
 
 def load_project_config(config_file: str) -> ProjectConfig:
-    config = load_yaml(config_file, "project")
-    return ProjectConfig(config)
+    config_data = load_yaml(config_file, "project")
+    return ProjectConfig(config_data)
 
 
 def load_jira_config(config_file: str) -> JiraConfig:
-    config = load_yaml(config_file, "jira")
-    return JiraConfig(config)
+    config_data = load_yaml(config_file, "jira")
+    return JiraConfig(config_data)

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Set
+from typing import Iterable, List, Set
 import csv
 import sys
 import datetime
@@ -50,7 +50,7 @@ def load_old_issues(csv_file: str) -> Set[str]:
     return issue_keys
 
 
-def save_new_issues(csv_file: str, new_issues: List[JiraIssue]) -> None:
+def save_new_issues(csv_file: str, new_issues: Iterable[JiraIssue]) -> None:
     with open(csv_file, 'a', encoding="UTF8") as f:
         field_names = ["Key", "Epic", "Status", "Summary", "Started", "Done", "Duration"]
         csv_writer = csv.DictWriter(f, fieldnames=field_names)
