@@ -62,7 +62,7 @@ class ProgressReport:
                 space_key = len(keys[i])
             if len(summaries[i]) > space_summary:
                 space_summary = len(summaries[i])
-        return(space_key+2, space_summary+2)
+        return (space_key+2, space_summary+2)
 
     def format_stats_str(self: ProgressReport, stats: StateCounts) -> str:
         spacing = [7, 13, 6, 7]
@@ -72,7 +72,7 @@ class ProgressReport:
         for i in range(len(spacing)):
             stats_display += f"{self.build_stat(spacing[i], data[i])}"
 
-        return(str(stats_display))
+        return (str(stats_display))
 
     def get_project_stats(self: ProgressReport, project_stats: StateCounts) -> List[int]:
         stat_types = ["pending", "in_progress", "done", "total"]
@@ -80,12 +80,12 @@ class ProgressReport:
         for i in range(len(stat_types)):
             type = getattr(project_stats, stat_types[i])
             formated_project_stats.append(type)
-        return(formated_project_stats)
+        return (formated_project_stats)
 
     def build_stat(self: ProgressReport, base_spacing: int, data: int) -> str:
         spacer = base_spacing-len(str(data))
         stat_display = f"{spacer*' '}{data}"
-        return(stat_display)
+        return (stat_display)
 
 
 def store_project_counts(count_date, project, project_counts, csv_file):
