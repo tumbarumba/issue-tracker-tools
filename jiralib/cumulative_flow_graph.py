@@ -1,6 +1,8 @@
+from __future__ import annotations
+from typing import List
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as pyplot
-import matplotlib.patches as Patches
+import matplotlib.patches as patches
 import pandas
 import os
 import sys
@@ -9,91 +11,224 @@ from datetime import datetime, timedelta
 from dateutil.parser import isoparse
 from math import ceil
 
+from .config import ProjectConfig
+
+colour_schemes = {
+    "sunset": {
+        "Done": "#e76f51",
+        "In Progress": "#f4a261",
+        "Pending": "#e9c46a",
+        "Current Date": "#A188A6",
+        "Predicted End Date": "#788AA3",
+        "Milestone": "indigo",
+        "Trendline": "midnightblue"
+    },
+    "electric": {
+        "Done": "#87F5FB",
+        "In Progress": "#DE3C4B",
+        "Pending": "#240115",
+        "Current Date": "#4C956C",
+        "Predicted End Date": "#788AA3",
+        "Milestone": "indigo",
+        "Trendline": "midnightblue"
+    },
+    "pastels": {
+        "Done": "#0FA3B1",
+        "In Progress": "#B5E2FA",
+        "Pending": "#F7A072",
+        "Current Date": "#9FB798",
+        "Predicted End Date": "#EDB6A3",
+        "Milestone": "#764248",
+        "Trendline": "#5F634F"
+    },
+    "default": {
+        "Done": "#CCEBC5",
+        "In Progress": "#B3CDE3",
+        "Pending": "#CCCCCC",
+        "Current Date": "#9FB798",
+        "Predicted End Date": "#EDB6A3",
+        "Milestone": "#764248",
+        "Trendline": "#5F634F"
+    }
+}
+
+
+class FlowData:
+    TREND_PERIOD: int = 14
+
+    def __init__(self: FlowData, data_frame: pandas.DataFrame, today: datetime.date):
+        self.today = today
+        self.dates = list(map(lambda date_str: isoparse(date_str).date(), data_frame["date"]))
+        self.pending = data_frame["pending"].tolist()
+        self.in_progress = data_frame["in_progress"].tolist()
+        self.done = data_frame["done"].tolist()
+        self.total = data_frame["total"].tolist()
+        self.slope_history = self._calculate_slopes()
+        self.current_trend = self._calculate_current_trend()
+        self.optimistic_trend = self._calculate_optimistic_trend()
+        self.pessimistic_trend = self._calculate_pessimistic_trend()
+
+    def _calculate_slopes(self) -> List[float]:
+        result = []
+        for index in range(len(self.done)):
+            regression_values = self._select_regression_values(index)
+            if len(regression_values) > 1:
+                trend = calculate_trend_coefficients(regression_values)
+                result.append(trend.slope)
+            else:
+                result.append(0.0)
+        return result
+
+    def _select_regression_values(self, last_index):
+        start = max(0, last_index - FlowData.TREND_PERIOD)
+        return self.done[start:last_index + 1]
+
+    def _calculate_current_trend(self):
+        current_slope = self.slope_history[-1]
+        return Trend(current_slope, self._calculate_implied_y_intercept(current_slope))
+
+    def _calculate_optimistic_trend(self):
+        optimistic_slope = max(self.slope_history[-FlowData.TREND_PERIOD:])
+        return Trend(optimistic_slope, self._calculate_implied_y_intercept(optimistic_slope))
+
+    def _calculate_pessimistic_trend(self):
+        pessimistic_slope = min(self.slope_history[-FlowData.TREND_PERIOD:])
+        return Trend(pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope))
+
+    def _calculate_implied_y_intercept(self: FlowData, slope: float):
+        """Force the calculated value of today's done to match the actual value by adjusting the intercept"""
+        index_today = (self.today - self.dates[0]).days
+        done_today = self.done[index_today]
+        return done_today - (index_today * slope)
+
+    def _predicted_end_index(self: FlowData, trend: Trend) -> int:
+        final_scope = self.total[-1]
+        return ceil((final_scope - trend.intercept) / trend.slope)
+
+    def _predicted_end_date(self: FlowData, trend: Trend) -> datetime.date:
+        start_date = self.dates[0]
+        return start_date + timedelta(days=self._predicted_end_index(trend))
+
+    @property
+    def optimistic_completion_date(self: FlowData) -> datetime.date:
+        return self._predicted_end_date(self.optimistic_trend)
+
+    @property
+    def pessimistic_completion_date(self: FlowData) -> datetime.date:
+        return self._predicted_end_date(self.pessimistic_trend)
+
+
+class Trend:
+    """Regression coefficients for a linear trend line"""
+
+    def __init__(self: Trend, slope: float, intercept: float):
+        self.slope = slope
+        self.intercept = intercept
+
+    def __str__(self: Trend) -> str:
+        return f"Trend({self.slope:n},{self.intercept:n})"
+
+
+def calculate_trend_coefficients(trend_values) -> Trend:
+    coefficients = numpy.polyfit(range(len(trend_values)), trend_values, 1)[:2]
+    return Trend(coefficients[0], coefficients[1])
+
 
 class CumulativeFlowGraph:
-    def __init__(self, project_config, csv_file, png_file):
+    def __init__(self: CumulativeFlowGraph, project_config: ProjectConfig, csv_file: str, png_file: str):
         self.project_config = project_config
-        self.today_date = datetime.today().date()
+        self.today = datetime.today().date()
         self.csv_file = csv_file
         self.png_file = png_file
 
     def run(self, open_graph):
         print(f"Reading cumulative flow data from {str(self.csv_file)}")
-        self.build_graph()
+        flow_data = self.read_csv_values()
+        self.build_graph(flow_data)
+
+        print(f"Current scope: {flow_data.total[-1]}")
+        print(f"Optimistic completion: {flow_data.optimistic_completion_date}")
+        print(f"Pessimistic completion: {flow_data.pessimistic_completion_date}")
+
         if open_graph:
             os.system(f"xdg-open '{self.png_file}'")
 
-    def build_graph(self):
-        self.read_csv_values()
-        colours = self.colour_scheme("pastels")
-        end_duration, trend_slope, trend_y_intercept = self.calculate_trend_prediction()
-        final_x_axis, final_y_axis, predicted_end_date = self.select_final_axis(end_duration)
+    def build_graph(self, flow_data):
+        colours = colour_schemes["default"]
         legend_elements = self.generate_legend(colours)
+
+        final_x_axis, final_y_axis = self.select_final_axis(flow_data)
+
         self.write_stacked_area_graph(final_x_axis, final_y_axis, legend_elements, colours)
-        self.write_trend_line(final_x_axis, trend_slope, trend_y_intercept, colours)
-        self.find_milestone_dates(final_x_axis, predicted_end_date, colours)
+        self.write_current_trend_line(final_x_axis, flow_data, colours)
+        self.write_optimistic_trend_line(final_x_axis, flow_data, colours)
+        self.write_pessimistic_trend_line(final_x_axis, flow_data, colours)
+        self.write_milestone_dates(max(flow_data.total), final_x_axis, flow_data.pessimistic_completion_date, colours)
+        self.set_plot_size(final_x_axis)
+
+        pyplot.gcf().canvas.draw()
+
         self.save_graph()
 
     def read_csv_values(self):
-        self.df = pandas.read_csv(self.csv_file)
-        self.x_axis_data = self.df['date'].tolist()
-        self.y_axis_data = [self.df['done'].tolist(), self.df['in_progress'].tolist(), self.df['pending'].tolist()]
+        data_frame = pandas.read_csv(self.csv_file)
+        return FlowData(data_frame, self.today)
 
-    def calculate_trend_prediction(self):
-        if len(self.x_axis_data) > 14:
-            prediction_data = self.df['done'].tolist()[-14:]
-        else:
-            prediction_data = self.df["done"].tolist()
-        trend_slope, trend_y_intercept = numpy.polyfit(range(len(prediction_data)), prediction_data, 1)
-        end_duration = (self.df['total'].tolist()[-1]-trend_y_intercept)/trend_slope
-        return(end_duration, trend_slope, trend_y_intercept)
+    def select_final_axis(self, flow_data):
+        start_date = flow_data.dates[0]
+        end_date = self.calc_end_date(flow_data.pessimistic_completion_date)
 
-    def select_final_axis(self, end_duration):
-        final_milestone = self.project_config.milestones[-1]["date"]
-        if len(self.x_axis_data) > 14:
-            start_index = len(self.x_axis_data)-14
-        else:
-            start_index = 0
-        start = isoparse(self.x_axis_data[start_index]).date()
-        predicted_end_date = start + timedelta(days=ceil(end_duration))
-        if (predicted_end_date - final_milestone).days < 15:
+        final_x_axis = pandas.date_range(start_date, end_date).date.tolist()
+
+        required_size = len(final_x_axis)
+        final_y_axis = [
+            self.normalise_series(flow_data.done, required_size),
+            self.normalise_series(flow_data.in_progress, required_size),
+            self.normalise_series(flow_data.pending, required_size),
+        ]
+        return final_x_axis, final_y_axis
+
+    @property
+    def final_milestone_date(self):
+        final_milestone = self.project_config.milestones[-1]
+        return final_milestone["date"]
+
+    def calc_end_date(self, predicted_end_date):
+        milestone_date = self.final_milestone_date
+        if (predicted_end_date - milestone_date).days < 15:
             # if final milestone and predicted finish are relatively close show both
-            end = max(predicted_end_date, final_milestone) + timedelta(days=2)
+            end_date = max(predicted_end_date, milestone_date) + timedelta(days=2)
         else:
-            end = final_milestone + timedelta(days=15)
+            end_date = milestone_date + timedelta(days=15)
+        return end_date
 
-        generated_dates = pandas.date_range(start, end).date
-        final_x_axis = [str(date) for date in generated_dates]
-        end_index = start_index + len(final_x_axis)
-        final_y_axis = []
+    def normalise_series(self, series_values, required_size):
+        result = series_values[:]
+        while len(result) < required_size:
+            result.append(series_values[-1])
 
-        for i in range(3):
-            data = list(self.y_axis_data[i][start_index:end_index])
-            while len(data) < len(final_x_axis):
-                data.append(self.y_axis_data[i][-1])
-            final_y_axis.append(data)
-        return (final_x_axis, final_y_axis, predicted_end_date)
+        return result
 
     def generate_legend(self, colours):
-        '''generates a list of all the information need to show the legend'''
+        """generates a list of all the information need to show the legend"""
         # Manual list of stackplot legend elements.
         legend_elements = [
-            Patches.Patch(facecolor=colours["Pending"], label="Pending"),
-            Patches.Patch(facecolor=colours["In Progress"], label="In Progress"),
-            Patches.Patch(facecolor=colours["Done"], label="Done"),
+            patches.Patch(facecolor=colours["Pending"], label="Pending"),
+            patches.Patch(facecolor=colours["In Progress"], label="In Progress"),
+            patches.Patch(facecolor=colours["Done"], label="Done"),
             Line2D([0], [0], color=colours["Current Date"], label="Current Date"),
             Line2D([0], [0], color=colours["Predicted End Date"], label="Predicted End Date")
         ]
         for i in range(len(self.project_config.milestones)):
-            # adds milestons elements from conf
+            # adds milestone elements from conf
             legend_elements.append(Line2D([0], [0],
-                                   color=colours[self.project_config.milestones[i]['name']],
+                                   color=colours["Milestone"],
                                    label=self.project_config.milestones[i]['name']))
 
-        return(legend_elements)
+        return legend_elements
 
     def write_stacked_area_graph(self, final_x_axis, final_y_axis, legend_elements, colours):
-        '''All formating graph visuals'''
+        """All formatting graph visuals"""
         pyplot.stackplot(final_x_axis, final_y_axis, colors=[colours["Done"], colours["In Progress"], colours["Pending"]])
         pyplot.legend(handles=legend_elements, loc='upper left')
         pyplot.xticks(rotation=90)
@@ -101,73 +236,64 @@ class CumulativeFlowGraph:
         pyplot.ylabel("Total Stories", labelpad=9, fontsize=12)
         pyplot.title(self.project_config.project_name, pad=9, fontsize=16)
         pyplot.gca().margins(0, 0)
-        pyplot.gcf().canvas.draw()
-        tl = pyplot.gca().get_xticklabels()
-        maxsize = max([t.get_window_extent().width for t in tl])
-        s = maxsize/pyplot.gcf().dpi*(len(final_x_axis))*2*0.8
-        margin = 0.8/pyplot.gcf().get_size_inches()[0]
-        pyplot.gcf().subplots_adjust(left=margin, right=1.-margin, bottom=.3)
-        pyplot.gcf().set_size_inches(s, pyplot.gcf().get_size_inches()[1]*1.5)
 
-    def write_trend_line(self, final_x_axis, trend_slope, trend_y_intercept, colours):
-        '''Plots linear regression line'''
-        left_intercept = trend_y_intercept
-        # left_intercept = trend_y_intercept + start_index*trend_slope
-        trend_range_of_x_points = range(len(final_x_axis))
-        pyplot.plot(trend_range_of_x_points, trend_slope*trend_range_of_x_points + left_intercept, color=colours["Trendline"])
+    def write_current_trend_line(self, final_x_axis, flow_data, colours):
+        """Plots linear regression line"""
+        start_date = self.today + timedelta(days=-FlowData.TREND_PERIOD+1)
+        end_date = self.today
+        self.write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.current_trend)
 
-    def find_milestone_dates(self, final_x_axis, predicted_end_date, colours):
-        '''checks for existence of data + calls writing func'''
-        self.write_date_line(final_x_axis.index(str(self.today_date)), colours["Current Date"])
+    def write_optimistic_trend_line(self, final_x_axis, flow_data, colours):
+        """Plots linear regression line"""
+        start_date = self.today
+        end_date = final_x_axis[-1]
+        self.write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.optimistic_trend)
+
+    def write_pessimistic_trend_line(self, final_x_axis, flow_data, colours):
+        """Plots linear regression line"""
+        start_date = self.today
+        end_date = final_x_axis[-1]
+        self.write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.pessimistic_trend)
+
+    def write_trend_line(self, final_x_axis, colours, start_date, end_date, trend):
+        """Plots linear regression line"""
+        trend_dates = pandas.date_range(start_date, end_date).date.tolist()
+
+        start_index = final_x_axis.index(start_date)
+        end_index = final_x_axis.index(end_date)
+
+        x_values = range(start_index, end_index + 1)
+        y_values = trend.slope * x_values + trend.intercept
+        pyplot.plot(trend_dates, y_values, color=colours["Trendline"])
+
+    def write_milestone_dates(self, max_total, final_x_axis, predicted_end_date, colours):
+        """checks for existence of data + calls writing func"""
+        self.write_date_line(max_total, self.today, colours["Current Date"])
         if self.project_config.milestones is not None:
             for i in range(len(self.project_config.milestones)):
                 milestone = self.project_config.milestones[i]
-                if str(milestone["date"]) in final_x_axis:
-                    self.write_date_line(final_x_axis.index(str(milestone["date"])), colours[milestone["name"]])
+                if milestone["date"] in final_x_axis:
+                    self.write_date_line(max_total, milestone["date"], colours["Milestone"])
                 else:
-                    sys.exit(f'Error: Milestone "{self.project_config.milestones[i]["date"]}" has no date.')
-        end_date = str(predicted_end_date)
-        self.write_date_line(end_date, colours["Predicted End Date"])
+                    sys.exit(f'Error: Milestone "{milestone["date"]}" has no date.')
 
-    def write_date_line(self, x_axis_position_index, line_color):
-        '''plots date lines'''
-        max_total = max(self.df['total'].tolist())
+        if predicted_end_date in final_x_axis:
+            self.write_date_line(max_total, predicted_end_date, colours["Predicted End Date"])
+
+    def write_date_line(self, max_total, x_axis_position_index, line_color):
+        """plots date lines"""
         pyplot.vlines(x_axis_position_index, 0, max_total+(max_total/6), color=line_color)
 
+    def set_plot_size(self, final_x_axis):
+        figure = pyplot.gcf()
+
+        figure.subplots_adjust(left=0.05, right=0.95, bottom=.1, top=0.95)
+
+        new_width = 1920.0 / figure.dpi
+        new_height = new_width / 16 * 9
+        figure.set_size_inches(new_width, new_height)
+
     def save_graph(self):
-        '''saves graph, creates file locations if necessary'''
+        """saves graph, creates file locations if necessary"""
         pyplot.savefig(self.png_file)
         print(f"Cumulative flow graph saved as {self.png_file}")
-
-    def colour_scheme(self, theme):
-        if theme == "sunset":
-            colours = {
-                "Done": "#e76f51",
-                "In Progress": "#f4a261",
-                "Pending": "#e9c46a",
-                "Current Date": "#A188A6",
-                "Predicted End Date": "#788AA3",
-                "PC22 Code Cutoff": "indigo",
-                "Trendline": "midnightblue"
-            }
-        if theme == "electric":
-            colours = {
-                "Done": "#87F5FB",
-                "In Progress": "#DE3C4B",
-                "Pending": "#240115",
-                "Current Date": "#4C956C",
-                "Predicted End Date": "#788AA3",
-                "PC22 Code Cutoff": "indigo",
-                "Trendline": "midnightblue"
-            }
-        if theme == "pastels":
-            colours = {
-                "Done": "#0FA3B1",
-                "In Progress": "#B5E2FA",
-                "Pending": "#F7A072",
-                "Current Date": "#9FB798",
-                "Predicted End Date": "#EDB6A3",
-                "PC22 Code Cutoff": "#764248",
-                "Trendline": "#5F634F"
-            }
-        return(colours)

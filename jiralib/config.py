@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Dict
+from typing import Any, Dict, List
 import os
 import yaml
 
@@ -36,7 +36,7 @@ class ProjectConfig:
     def __init__(self: ProjectConfig, project_config: Dict[str, Any]):
         self.project_name: str = project_config.get("name", "Unnamed Project")
         self.project_label: str = project_config.get("label", "(none)")
-        self.milestones: Dict[str, Any] = project_config.get("milestones", [])
+        self.milestones: List[Dict[str, Any]] = project_config.get("milestones", [])
         self.report_dir: str | None = project_config.get("report_dir", None)
 
 

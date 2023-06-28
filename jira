@@ -47,8 +47,8 @@ def build_report_options(verbose: bool, project_config_file: click.Path, jira_co
 def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
     """Creates a cumulative flow graph from the progress log."""
     options: ReportOptions = ctx.obj
-    csv_file = f"{options.report_dir}/{options.project_config.project_name}/progress.csv"
-    png_file = f"{options.report_dir}/{options.project_config.project_name}/cfd-{str(date.today())}.png"
+    csv_file = f"{options.report_dir}/{options.project_config.project_label}/progress.csv"
+    png_file = f"{options.report_dir}/{options.project_config.project_label}/cfd-{str(date.today())}.png"
     CumulativeFlowGraph(options.project_config, csv_file, png_file).run(open_graph)
 
 
@@ -94,19 +94,14 @@ def issue(ctx: click.Context, open: bool, update_fix_version: str, issue_keys: L
 
 
 @jira.command()
-@click.option("-g", "--graph", is_flag=True, default=False, help="Generate cumulative flow graph")
 @click.argument("label")
 @click.pass_context
-def progress(ctx: click.Context, graph: bool, label: str) -> None:
+def progress(ctx: click.Context, label: str) -> None:
     """Report on progress for a project."""
     options: ReportOptions = ctx.obj
     csv_file = f"{options.report_dir}/{label}/progress.csv"
-    if graph:
-        png_file = f"{options.report_dir}/{label}/cfd-{str(date.today())}.png"
-    else:
-        png_file = None
     server = JiraServer(options.verbose, options.jira_config)
-    ProgressReport(server, options.verbose).run(label, csv_file, png_file)
+    ProgressReport(server, options.verbose).run(label, csv_file)
 
 
 @jira.command()

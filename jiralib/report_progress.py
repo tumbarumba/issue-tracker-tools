@@ -6,7 +6,6 @@ from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import csv
 
-from .cumulative_flow_graph import CumulativeFlowGraph
 from .jira_ext import JiraServer, JiraEpic, StateCounts
 
 
@@ -15,10 +14,10 @@ class ProgressReport:
         self.jira: JiraServer = jira
         self.verbose: bool = verbose
 
-    def run(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
-        self.report_cumulative_flow(label, csv_file, png_file)
+    def run(self: ProgressReport, label: str, csv_file: str) -> None:
+        self.report_cumulative_flow(label, csv_file)
 
-    def report_cumulative_flow(self: ProgressReport, label: str, csv_file: str, png_file: str) -> None:
+    def report_cumulative_flow(self: ProgressReport, label: str, csv_file: str) -> None:
         today = str(date.today())
         print(f"Label: {label}\nDate: {today}")
         epics: List[JiraEpic] = self.jira.query_project_epics(label)
@@ -31,13 +30,10 @@ class ProgressReport:
 
         store_project_counts(today, label, project_counts, csv_file)
 
-        if png_file:
-            CumulativeFlowGraph(self.project_config, csv_file, png_file).run(False)
-
     def print_header(self: ProgressReport, key_space: int, summary_space: int) -> int:
         table_header = f"Key{(key_space-3)*' '}Epic{(summary_space-4)*' '}Pending  In Progress  Done  Total"
         print(f"\n{table_header}\n{(len(table_header))*'='}")
-        return(len(table_header))
+        return len(table_header)
 
     def print_body(self: ProgressReport,
                    epics: List[JiraEpic],
