@@ -5,15 +5,16 @@ if [ "$1" == "" ]; then
     exit 1
 fi
 
-set -x
 set -e
 
 project_config=$1
 report_dir=$(python -m yq -r .project.report_dir $project_config)
 project_label=$(python -m yq -r .project.label $project_config)
-cfd_dir="$report_dir/$project_label"
-cfd_dir="${cfd_dir/#\~/$HOME}"
+cfd_dir="${report_dir/#\~/$HOME}/$project_label"
 csv_file="$cfd_dir/progress.csv"
+
+echo "Reading data from $csv_file"
+
 first_date=$(cat $csv_file | head -2 | tail -1 | cut --delimiter="," -f 1)
 last_date=$(cat $csv_file | tail -1 | cut --delimiter="," -f 1)
 stop_date=$(date -I -d "$last_date + 1 day")
@@ -28,5 +29,9 @@ while [ "$d" != "$stop_date" ]; do
 done
 
 animation=$cfd_dir/cfd-anim-$last_date.gif
+echo "Creating animation $animation..."
+
 convert -delay 10 -loop 0 $cfd_dir/cfd-*.png $animation
 mogrify -layers optimize $animation
+
+echo "Done"
