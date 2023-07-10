@@ -12,7 +12,7 @@ def test_uniform_trend() -> None:
     flow_data = FlowData(df, today)
 
     assert flow_data.pending == df["pending"].tolist()
-    assert math.isclose(flow_data.slope_history[0], 0.0)
+    assert math.isclose(flow_data.slope_history[0], 1.0)
     assert math.isclose(flow_data.slope_history[1], 1.0)
     assert math.isclose(flow_data.slope_history[-1], 1.0)
     assert_equal_trends(flow_data.current_trend, Trend(1.0, 0.0))
@@ -26,7 +26,7 @@ def test_increasing_trend() -> None:
 
     flow_data = FlowData(df, today)
 
-    assert math.isclose(flow_data.slope_history[0], 0.0)
+    assert math.isclose(flow_data.slope_history[0], 1.0)
     assert math.isclose(flow_data.slope_history[1], 1.0)
     assert math.isclose(flow_data.slope_history[-1], 4.14286, abs_tol=1e-04)
     assert_equal_trends(flow_data.current_trend, Trend(4.14286, -7.14286))
@@ -34,9 +34,22 @@ def test_increasing_trend() -> None:
     assert_equal_trends(flow_data.pessimistic_trend, Trend(1.0, 40.0))
 
 
+def test_dates_after_today_are_excluded() -> None:
+    today = date(2023, 6, 28)
+    final_date = date(2023, 6, 30)
+    df = increasing_progress_df(final_date)
+
+    flow_data = FlowData(df, today)
+
+    assert flow_data.dates[-1] == today
+    assert flow_data.pending[-1] == 50
+    assert flow_data.in_progress[-1] == 5
+    assert flow_data.done[-1] == 45
+    assert flow_data.total[-1] == 100
+
+
 def uniform_progress_df(final_date) -> pd.DataFrame:
-    # 16 sequential dates ending in final_date
-    dates = np.array([str(final_date + timedelta(days=i)) for i in range(-15, 1)])
+    dates = date_array(final_date, 16)
     return pd.DataFrame({
         "date":         dates,
         "pending":      [19, 18, 17, 16, 15, 14, 13, 12, 11, 10,  9,  8,  7,  6,  5,  4],  # noqa

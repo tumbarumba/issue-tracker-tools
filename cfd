@@ -1,0 +1,41 @@
+#! /usr/bin/env python
+import click
+import os
+import datetime
+
+from jiralib.config import load_project_config, ReportOptions
+from jiralib.cumulative_flow_graph import CumulativeFlowGraph
+
+
+@click.command()
+@click.option("-v", "--verbose", is_flag=True)
+@click.option("-p", "--project-config", type=click.Path(exists=True))
+@click.option("-o", "--open-graph", is_flag=True, default=False, help="Open the graph after generation")
+@click.option("-t", "--today", default=None, type=click.DateTime(formats=["%Y-%m-%d"]),
+              help="Override today's date")
+def cfd(verbose: bool, project_config: click.Path, open_graph: bool, today: click.DateTime) -> None:
+    options = build_report_options(verbose, project_config)
+    today_date = date_option_or_today(today)
+    csv_file = f"{options.report_dir}/{options.project_config.project_label}/progress.csv"
+    png_file = f"{options.report_dir}/{options.project_config.project_label}/cfd-{str(today_date)}.png"
+    CumulativeFlowGraph(options.project_config, csv_file, png_file, today_date).run(open_graph)
+
+
+def build_report_options(verbose: bool, project_config_file: click.Path) -> ReportOptions:
+    config_file = project_config_file or os.path.expanduser("~/jiraconfig.yml")
+    if verbose:
+        print(f"Using project config file '{config_file}'")
+
+    project_config = load_project_config(config_file)
+
+    return ReportOptions(verbose, project_config)
+
+
+def date_option_or_today(option: click.DateTime) -> datetime.date:
+    if option:
+        return option.date()
+    return datetime.date.today()
+
+
+if __name__ == "__main__":
+    cfd()

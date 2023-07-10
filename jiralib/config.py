@@ -55,12 +55,12 @@ class ReportOptions(object):
         self.report_dir: str = self.lookup_report_dir()
 
     def lookup_report_dir(self) -> str:
-        dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
-        if "~" in dir:
-            dir = os.path.expanduser(dir)
+        report_dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
+        if "~" in report_dir:
+            report_dir = os.path.expanduser(report_dir)
         if self.verbose:
-            print(f"Using report_dir {dir}")
-        return dir
+            print(f"Using report_dir {report_dir}")
+        return report_dir
 
 
 def load_yaml(config_file: str, key: str) -> Dict[str, Any]:

@@ -3,7 +3,6 @@ import click
 import sys
 import os
 import webbrowser
-from datetime import date
 from typing import List
 
 from jiralib.config import load_jira_config, load_project_config, ReportOptions
@@ -14,7 +13,6 @@ from jiralib.report_resolved import ResolvedReport
 from jiralib.report_issue_detail import IssueDetailReport
 from jiralib.report_release_notes import ReleaseNotesReport
 from jiralib.report_working import WorkingReport
-from jiralib.cumulative_flow_graph import CumulativeFlowGraph
 
 
 @click.group(context_settings=dict(help_option_names=['-h', '--help']))
@@ -39,17 +37,6 @@ def build_report_options(verbose: bool, project_config_file: click.Path, jira_co
     project_config = load_project_config(project_config_file)
 
     return ReportOptions(verbose, project_config, jira_config)
-
-
-@jira.command()
-@click.option("-o", "--open-graph", is_flag=True, default=False, help="Open the graph after generation")
-@click.pass_context
-def cumulative_flow(ctx: click.Context, open_graph: bool) -> None:
-    """Creates a cumulative flow graph from the progress log."""
-    options: ReportOptions = ctx.obj
-    csv_file = f"{options.report_dir}/{options.project_config.project_label}/progress.csv"
-    png_file = f"{options.report_dir}/{options.project_config.project_label}/cfd-{str(date.today())}.png"
-    CumulativeFlowGraph(options.project_config, csv_file, png_file).run(open_graph)
 
 
 @jira.command()
