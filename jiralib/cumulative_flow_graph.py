@@ -55,6 +55,7 @@ colour_schemes = {
 
 class FlowData:
     TREND_PERIOD: int = 14
+    MINIMUM_TREND_SLOPE = 0.001
 
     def __init__(self: FlowData, data_frame: pandas.DataFrame, today: datetime.date):
         self.today = today
@@ -106,11 +107,18 @@ class FlowData:
         done_today = self.done[index_today]
         return done_today - (index_today * slope)
 
-    def _predicted_end_index(self: FlowData, trend: Trend) -> int:
+    def _predicted_end_index(self: FlowData, trend: Trend) -> int | None:
+        if trend.slope < FlowData.MINIMUM_TREND_SLOPE:
+            return None
+
         final_scope = self.total[-1]
         return ceil((final_scope - trend.intercept) / trend.slope)
 
     def _predicted_end_date(self: FlowData, trend: Trend) -> datetime.date:
+        end_index = self._predicted_end_index(trend)
+        if not end_index:
+            return None
+
         start_date = self.dates[0]
         return start_date + timedelta(days=self._predicted_end_index(trend))
 
@@ -168,7 +176,9 @@ class CumulativeFlowGraph:
         self.write_current_trend_line(final_x_axis, flow_data, colours)
         self.write_optimistic_trend_line(final_x_axis, flow_data, colours)
         self.write_pessimistic_trend_line(final_x_axis, flow_data, colours)
-        self.write_milestone_dates(max(flow_data.total), final_x_axis, flow_data.pessimistic_completion_date, colours)
+        end_date = flow_data.pessimistic_completion_date
+        if end_date:
+            self.write_milestone_dates(max(flow_data.total), final_x_axis, end_date, colours)
         self.set_plot_size()
 
         pyplot.gcf().canvas.draw()
@@ -181,7 +191,7 @@ class CumulativeFlowGraph:
 
     def select_final_axis(self, flow_data):
         start_date = flow_data.dates[0]
-        end_date = self.calc_end_date(flow_data.pessimistic_completion_date)
+        end_date = self.calc_end_date(flow_data)
 
         final_x_axis = pandas.date_range(start_date, end_date).date.tolist()
 
@@ -198,14 +208,22 @@ class CumulativeFlowGraph:
         final_milestone = self.project_config.milestones[-1]
         return final_milestone["date"]
 
-    def calc_end_date(self, predicted_end_date):
+    def calc_end_date(self, flow_data):
         milestone_date = self.final_milestone_date
+        predicted_end_date = self.last_milestone_or_end_date(flow_data, milestone_date)
         if (predicted_end_date - milestone_date).days < 15:
             # if final milestone and predicted finish are relatively close show both
             end_date = max(predicted_end_date, milestone_date) + timedelta(days=2)
         else:
             end_date = milestone_date + timedelta(days=15)
         return end_date
+
+    def last_milestone_or_end_date(self, flow_data, milestone_date):
+        return (
+                flow_data.pessimistic_completion_date
+                or flow_data.optimistic_completion_date
+                or milestone_date
+        )
 
     def normalise_series(self, series_values, required_size):
         result = series_values[:]
@@ -222,11 +240,13 @@ class CumulativeFlowGraph:
             patches.Patch(facecolor=colours["In Progress"], label="In Progress"),
             patches.Patch(facecolor=colours["Done"], label="Done"),
             Line2D([0], [0], color=colours["Current Date"], label=f"{self.today} (Today)"),
-            Line2D([0], [0], color=colours["Predicted End Date"],
-                   label=f"{flow_data.optimistic_completion_date} (Optimistic End)"),
-            Line2D([0], [0], color=colours["Predicted End Date"],
-                   label=f"{flow_data.pessimistic_completion_date} (Pessimistic End)"),
         ]
+        if flow_data.optimistic_completion_date:
+            legend_elements.append(Line2D([0], [0], color=colours["Predicted End Date"],
+                                          label=f"{flow_data.optimistic_completion_date} (Optimistic End)"))
+        if flow_data.pessimistic_completion_date:
+            legend_elements.append(Line2D([0], [0], color=colours["Predicted End Date"],
+                                          label=f"{flow_data.pessimistic_completion_date} (Pessimistic End)"))
         for milestone in self.project_config.milestones:
             legend_elements.append(Line2D([0], [0],
                                    color=colours["Milestone"],
