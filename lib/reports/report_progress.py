@@ -6,7 +6,8 @@ from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import csv
 
-from .jira_ext import JiraServer, JiraEpic, StateCounts
+from lib.jira.jira_ext import JiraServer, JiraEpic
+from lib.issues.issue_counts import IssueCounts
 
 
 class ProgressReport:
@@ -42,12 +43,12 @@ class ProgressReport:
                    summaries: List[str],
                    summary_space: int,
                    table_length: int) -> int:
-        project_counts = StateCounts.zero()
+        project_counts = IssueCounts.zero()
         i = 0
         for epic in epics:
-            project_counts += epic.state_counts
+            project_counts += epic.issue_counts
             key_epic_display = f"{keys[i]}{(key_space-len(keys[i]))*' '}{summaries[i]}{(summary_space-len(summaries[i]))*' '}"
-            stats_display = self.format_stats_str(epic.state_counts)
+            stats_display = self.format_stats_str(epic.issue_counts)
             print(f"{key_epic_display}{stats_display}")
             i += 1
 
@@ -64,7 +65,7 @@ class ProgressReport:
                 space_summary = len(summaries[i])
         return (space_key+2, space_summary+2)
 
-    def format_stats_str(self: ProgressReport, stats: StateCounts) -> str:
+    def format_stats_str(self: ProgressReport, stats: IssueCounts) -> str:
         spacing = [7, 13, 6, 7]
         stats_display = ""
         # print("stats:  ", stats)
@@ -74,7 +75,7 @@ class ProgressReport:
 
         return (str(stats_display))
 
-    def get_project_stats(self: ProgressReport, project_stats: StateCounts) -> List[int]:
+    def get_project_stats(self: ProgressReport, project_stats: IssueCounts) -> List[int]:
         stat_types = ["pending", "in_progress", "done", "total"]
         formated_project_stats: List[int] = []
         for i in range(len(stat_types)):
@@ -117,7 +118,7 @@ def counts_from_row(row):
     pending = int(row["pending"])
     in_progress = int(row["in_progress"])
     done = int(row["done"])
-    return StateCounts(pending, in_progress, done)
+    return IssueCounts(pending, in_progress, done)
 
 
 def write_csv_data(csv_path, project, csv_data):

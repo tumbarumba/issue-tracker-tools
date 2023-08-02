@@ -3,8 +3,8 @@ import click
 import os
 import datetime
 
-from jiralib.config import load_project_config, ReportOptions
-from jiralib.cumulative_flow_graph import CumulativeFlowGraph
+from lib.config import load_project_config, ReportOptions
+from lib.cfd.cumulative_flow_graph import CumulativeFlowGraph
 
 
 @click.command()

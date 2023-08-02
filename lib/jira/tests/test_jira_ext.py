@@ -1,6 +1,6 @@
 import pytest
 import dateutil.parser
-from jiralib.jira_ext import _business_days
+from lib.jira.jira_ext import _business_days
 
 
 @pytest.mark.parametrize("start, end, expected, message", [

@@ -5,8 +5,8 @@ import datetime
 from statistics import mean, median
 from itertools import groupby
 
-from .config import ReportOptions
-from .jira_ext import JiraIssue, JiraEpic, JiraServer
+from lib.config import ReportOptions
+from lib.jira.jira_ext import JiraIssue, JiraEpic, JiraServer
 
 this = sys.modules[__name__]
 this.date_source = datetime.date

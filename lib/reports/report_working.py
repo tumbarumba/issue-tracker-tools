@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Dict, List
 from itertools import groupby
 
-from .config import ReportOptions
-from .jira_ext import JiraServer, JiraEpic, JiraIssue
+from lib.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
+from lib.config import ReportOptions
 
 
 class WorkingReport:

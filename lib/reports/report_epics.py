@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple
 import sys
 import re
 
-from .config import ReportOptions
-from .jira_ext import JiraServer, JiraEpic, JiraIssue
+from lib.config import ReportOptions
+from lib.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
 
 
 class EpicReport:

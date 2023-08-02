@@ -10,7 +10,8 @@ from dotenv import dotenv_values
 from jira import JIRA, Issue
 from jira.client import ResultList
 
-from .config import JiraConfig
+from lib.issues.issue_counts import IssueCounts
+from lib.config import JiraConfig
 
 
 class JiraServer(JIRA):
@@ -193,43 +194,18 @@ class JiraIssue:
         return self.raw_issue.permalink()
 
 
-class StateCounts:
-    def __init__(self, pending, in_progress, done):
-        self.pending = pending
-        self.in_progress = in_progress
-        self.done = done
-        self.total = pending + in_progress + done
-
-    @classmethod
-    def zero(cls) -> StateCounts:
-        return cls(0, 0, 0)
-
-    def __add__(self, other) -> StateCounts:
-        return StateCounts(self.pending + other.pending,
-                           self.in_progress + other.in_progress,
-                           self.done + other.done)
-
-    def __eq__(self, other) -> bool:
-        return (self.pending == other.pending
-                and self.in_progress == other.in_progress
-                and self.done == other.done)
-
-    def __str__(self) -> str:
-        return f"StateCounts({self.pending},{self.in_progress},{self.done})"
-
-
 class JiraEpic(JiraIssue):
     def __init__(self: JiraEpic, jira_issue: Issue, jira: JiraServer):
         super().__init__(jira_issue, jira.custom_fields)
         self._jira = jira
-        self._state_counts = None
+        self._issue_counts = None
 
     @property
-    def state_counts(self: JiraEpic) -> StateCounts:
-        if not self._state_counts:
-            self._state_counts = _load_epic_counts(self, self._jira)
+    def issue_counts(self: JiraEpic) -> IssueCounts:
+        if not self._issue_counts:
+            self._issue_counts = _load_issue_counts(self, self._jira)
 
-        return self._state_counts
+        return self._issue_counts
 
 
 IN_PROGRESS_STATES = ["In Progress", "In Review", "Awaiting Merge", "Under Test"]
@@ -237,11 +213,11 @@ DONE_STATES = ["Awaiting Demo", "Done"]
 EXCLUDE_STATES = ["Closed", "Duplicate"]
 
 
-def _load_epic_counts(epic: JiraEpic, jira: JiraServer) -> StateCounts:
-    estimated_count = _load_epic_estimated_stories(epic, jira)
+def _load_issue_counts(epic: JiraEpic, jira: JiraServer) -> IssueCounts:
+    estimated_count = _load_epic_estimated_issues(epic, jira)
     all_epic_issues = jira.query_issues_in_epic(epic.key)
     if len(all_epic_issues) == 0:
-        return StateCounts(estimated_count, 0, 0)
+        return IssueCounts(estimated_count, 0, 0)
 
     countable_issues = list(filter(lambda issue: issue.status not in EXCLUDE_STATES, all_epic_issues))
 
@@ -253,18 +229,18 @@ def _load_epic_counts(epic: JiraEpic, jira: JiraServer) -> StateCounts:
     pending_count = reported_total_count - in_progress_count - done_count
     if epic.epic_status == "Done":
         pending_count = 0
-    return StateCounts(pending_count, in_progress_count, done_count)
+    return IssueCounts(pending_count, in_progress_count, done_count)
 
 
-def _load_epic_estimated_stories(epic: JiraEpic, jira: JiraServer) -> int:
-    estimated_stories = 10
-    story_estimate_pattern = re.compile(r"^Expected size: (\d+)")
+def _load_epic_estimated_issues(epic: JiraEpic, jira: JiraServer) -> int:
+    estimated_issues = 10
+    issue_estimate_pattern = re.compile(r"^Expected size: (\d+)")
     for comment in jira.comments(epic.key):
-        match = story_estimate_pattern.match(comment.body)
+        match = issue_estimate_pattern.match(comment.body)
         if match:
-            estimated_stories = int(match.group(1))
+            estimated_issues = int(match.group(1))
 
-    return estimated_stories
+    return estimated_issues
 
 
 def _filter_by_state(issues: List[JiraIssue], states_to_check: List[str]) -> List[JiraIssue]:

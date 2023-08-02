@@ -1,4 +1,4 @@
-from jiralib.config import load_yaml, JiraConfig, ProjectConfig
+from lib.config import load_yaml, JiraConfig, ProjectConfig
 
 
 def test_load_jira_config():

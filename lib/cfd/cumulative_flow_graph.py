@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from dateutil.parser import isoparse
 from math import ceil
 
-from .config import ProjectConfig
+from lib.config import ProjectConfig
 
 colour_schemes = {
     "sunset": {

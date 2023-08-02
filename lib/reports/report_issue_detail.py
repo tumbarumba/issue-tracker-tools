@@ -5,7 +5,7 @@ import re
 import json
 import jsonpickle
 
-from .jira_ext import JiraServer, JiraIssue
+from lib.jira.jira_ext import JiraServer, JiraIssue
 
 
 class IssueDetailReport:

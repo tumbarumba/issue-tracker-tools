@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List
 
-from .config import ReportOptions
-from .jira_ext import JiraServer
+from lib.jira.jira_ext import JiraServer
+from lib.config import ReportOptions
 from .report_issue_summary import IssueSummaryReport
 
 

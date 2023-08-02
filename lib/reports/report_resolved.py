@@ -4,8 +4,8 @@ import csv
 import sys
 import datetime
 
-from .config import ReportOptions
-from .jira_ext import JiraServer, JiraIssue
+from lib.jira.jira_ext import JiraServer, JiraIssue
+from lib.config import ReportOptions
 from .report_issue_summary import IssueSummaryReport
 
 
