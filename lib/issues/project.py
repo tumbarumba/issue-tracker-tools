@@ -10,7 +10,7 @@ T = TypeVar("T", bound="Parent")  # noqa
 
 class Project:
     def __init__(self: Project, project_key: str, epics: List[Epic]):
-        self.project_key = project_key
+        self.key = project_key
         self.epics = epics
 
     @classmethod
