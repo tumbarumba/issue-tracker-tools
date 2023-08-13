@@ -8,9 +8,10 @@ from typing import List
 from lib.config import load_jira_config, load_project_config, ReportOptions
 from lib.jira.jira_ext import JiraServer
 from lib.reports.report_epics import EpicReport
-from lib.reports.report_progress import ProgressReport
-from lib.reports.report_resolved import ResolvedReport
 from lib.reports.report_issue_detail import IssueDetailReport
+from lib.reports.report_progress import ProgressReport
+from lib.reports.report_project import ProjectReport
+from lib.reports.report_resolved import ResolvedReport
 from lib.reports.report_release_notes import ReleaseNotesReport
 from lib.reports.report_working import WorkingReport
 
@@ -89,6 +90,17 @@ def progress(ctx: click.Context, label: str) -> None:
     csv_file = f"{options.report_dir}/{label}/progress.csv"
     server = JiraServer(options.verbose, options.jira_config)
     ProgressReport(server, options.verbose).run(label, csv_file)
+
+
+@jira.command()
+@click.pass_context
+def project(ctx: click.Context) -> None:
+    """Report on progress for a project."""
+    options: ReportOptions = ctx.obj
+    project_key = options.project_config.project_label
+    csv_file = f"{options.report_dir}/{options.project_config.project_label}/progress.csv"
+    jira = JiraServer(options.verbose, options.jira_config)
+    ProjectReport(jira, options.verbose).run(project_key, csv_file)
 
 
 @jira.command()

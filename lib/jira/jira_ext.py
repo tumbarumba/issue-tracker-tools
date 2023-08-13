@@ -10,16 +10,21 @@ from dotenv import dotenv_values
 from jira import JIRA, Issue
 from jira.client import ResultList
 
-from lib.issues.issue_counts import IssueCounts
 from lib.config import JiraConfig
+from lib.issues.issue import Epic
+from lib.issues.issue_counts import IssueCounts
+from lib.issues.issue_provider import IssueProvider
 
 
-class JiraServer(JIRA):
+class JiraServer(IssueProvider, JIRA):
     def __init__(self: JiraServer, verbose: bool, jira_config: JiraConfig):
         super().__init__(token_auth=_load_jira_token(), options={'server': jira_config.url})
         self._verbose = verbose
         self._config = jira_config
         self._custom_fields = self._find_custom_fields()
+
+    def load_project_epics(self: JiraServer, project_key: str) -> List[Epic]:
+        return self.query_project_epics(project_key)
 
     @property
     def custom_fields(self) -> Dict[str, str]:
@@ -194,7 +199,7 @@ class JiraIssue:
         return self.raw_issue.permalink()
 
 
-class JiraEpic(JiraIssue):
+class JiraEpic(JiraIssue, Epic):
     def __init__(self: JiraEpic, jira_issue: Issue, jira: JiraServer):
         super().__init__(jira_issue, jira.custom_fields)
         self._jira = jira

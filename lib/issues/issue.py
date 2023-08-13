@@ -1,5 +1,8 @@
 from __future__ import annotations
-from typing import Any, List
+from typing import Any
+import abc
+
+from .issue_counts import IssueCounts
 
 
 class Issue:
@@ -11,10 +14,14 @@ class Issue:
         return self.key == other.key
 
     def __repr__(self: Issue) -> str:
-        return f"Issue({self.key})"
+        return f"{self.__class__.__name__}({self.key})"
 
 
-class Epic(Issue):
-    def __init__(self: Epic, key: str, summary: str, issues: List[Issue]):
+class Epic(Issue, metaclass=abc.ABCMeta):
+    def __init__(self: Epic, key: str, summary: str):
         super().__init__(key, summary)
-        self.issues = issues
+
+    @property
+    @abc.abstractmethod
+    def issue_counts(self: Epic) -> IssueCounts:
+        pass

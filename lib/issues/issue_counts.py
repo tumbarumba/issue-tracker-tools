@@ -23,4 +23,4 @@ class IssueCounts:
                 and self.done == other.done)
 
     def __str__(self) -> str:
-        return f"StateCounts({self.pending},{self.in_progress},{self.done})"
+        return f"IssueCounts({self.pending},{self.in_progress},{self.done})"
