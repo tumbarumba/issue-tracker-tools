@@ -30,6 +30,7 @@ class ProjectReport:
 
         print(f"Project: {project_key}")
         print(f"Date: {today}")
+        print()
 
         epics = self.issue_provider.load_project_epics(project_key)
 
@@ -38,16 +39,15 @@ class ProjectReport:
         table_header = format_row(col_widths, COLUMN_NAMES)
         row_separator = len(table_header) * "="
 
-        print()
         print(table_header)
         print(row_separator)
         for epic in epics:
-            print(epic_row(col_widths, epic))
+            print(format_row(col_widths, epic_row_values(epic)))
 
-        project_counts = accumulate_all_counts_for(epics)
+        project_counts = accumulate_counts_for(epics)
 
         print(row_separator)
-        print(total_row(col_widths, project_counts))
+        print(format_row(col_widths, total_row_values(project_counts)))
         print()
 
         store_project_counts(today, project_key, project_counts, csv_file)
@@ -60,46 +60,40 @@ def calculate_column_widths(epics) -> List[int]:
     return col_widths
 
 
-def epic_row(col_widths: List[int], epic: Epic) -> str:
-    return format_row(
-        col_widths,
-        [
-            epic.key,
-            epic.summary,
-            epic.issue_counts.pending,
-            epic.issue_counts.in_progress,
-            epic.issue_counts.done,
-            epic.issue_counts.total,
-        ],
-    )
+def epic_row_values(epic: Epic) -> List[Any]:
+    return [
+        epic.key,
+        epic.summary,
+        epic.issue_counts.pending,
+        epic.issue_counts.in_progress,
+        epic.issue_counts.done,
+        epic.issue_counts.total,
+    ]
 
 
-def total_row(col_widths: List[int], total_counts: IssueCounts) -> str:
-    return format_row(
-        col_widths,
-        [
-            "",
-            "",
-            total_counts.pending,
-            total_counts.in_progress,
-            total_counts.done,
-            total_counts.total,
-        ],
-    )
+def total_row_values(total_counts: IssueCounts) -> List[Any]:
+    return [
+        "",
+        "",
+        total_counts.pending,
+        total_counts.in_progress,
+        total_counts.done,
+        total_counts.total,
+    ]
 
 
 def format_row(col_widths: List[int], cell_values: List[Any]) -> str:
     return (
-        f"{cell_values[0]:<{col_widths[0]}}"
-        f"{cell_values[1]:<{col_widths[1]}}"
-        f"{cell_values[2]:>{col_widths[2]}}"
-        f"{cell_values[3]:>{col_widths[3]}}"
-        f"{cell_values[4]:>{col_widths[4]}}"
-        f"{cell_values[5]:>{col_widths[5]}}"
+        f"{cell_values[0]:<{col_widths[0]}}"  # Key
+        f"{cell_values[1]:<{col_widths[1]}}"  # Summary
+        f"{cell_values[2]:>{col_widths[2]}}"  # Pending
+        f"{cell_values[3]:>{col_widths[3]}}"  # In Progress
+        f"{cell_values[4]:>{col_widths[4]}}"  # Done
+        f"{cell_values[5]:>{col_widths[5]}}"  # Total
     )
 
 
-def accumulate_all_counts_for(epics) -> IssueCounts:
+def accumulate_counts_for(epics) -> IssueCounts:
     return reduce(
         lambda accumulation, epic: accumulation + epic.issue_counts,
         epics,
