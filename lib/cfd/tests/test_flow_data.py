@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from lib.cfd.cumulative_flow_graph import FlowData, Trend
+from lib.cfd.flow_data import FlowData, Trend
 
 
 def test_uniform_trend() -> None:
