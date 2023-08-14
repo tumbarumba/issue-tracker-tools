@@ -4,18 +4,19 @@ import csv
 from datetime import date
 from functools import reduce
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, List
 
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
+from lib.issues.issue import Epic
 from lib.issues.issue_counts import IssueCounts
 from lib.issues.issue_provider import IssueProvider
 
-COLUMNS = ["Key", "Epic", "Pending", "In Progress", "Done", "Total"]
+COLUMN_NAMES = ["Key", "Epic", "Pending", "In Progress", "Done", "Total"]
 COLUMN_MARGIN = 2
 DEFAULT_COLUMN_WIDTHS = list(
-    map(lambda col_name: len(col_name) + COLUMN_MARGIN, COLUMNS)
+    map(lambda col_name: len(col_name) + COLUMN_MARGIN, COLUMN_NAMES)
 )
 
 
@@ -33,49 +34,72 @@ class ProjectReport:
         epics = self.issue_provider.load_project_epics(project_key)
 
         col_widths = calculate_column_widths(epics)
-        table_header = (
-            f"{'Key':<{col_widths[0]}}"
-            f"{'Epic':<{col_widths[1]}}"
-            f"{'Pending':>{col_widths[2]}}"
-            f"{'In Progress':>{col_widths[3]}}"
-            f"{'Done':>{col_widths[4]}}"
-            f"{'Total':>{col_widths[5]}}"
-        )
-        table_width = len(table_header)
+
+        table_header = format_row(col_widths, COLUMN_NAMES)
+        row_separator = len(table_header) * "="
 
         print()
         print(table_header)
-        print(f"{table_width*'='}")
+        print(row_separator)
         for epic in epics:
-            print(
-                f"{epic.key:<{col_widths[0]}}{epic.summary:<{col_widths[1]}}{format_counts(epic.issue_counts, col_widths)}"
-            )
-        print(f"{table_width*'='}")
+            print(epic_row(col_widths, epic))
 
         project_counts = accumulate_all_counts_for(epics)
 
-        print(f"{format_counts(project_counts, col_widths) :>{table_width}}\n")
+        print(row_separator)
+        print(total_row(col_widths, project_counts))
+        print()
 
         store_project_counts(today, project_key, project_counts, csv_file)
 
 
-def calculate_column_widths(epics):
+def calculate_column_widths(epics) -> List[int]:
     col_widths = DEFAULT_COLUMN_WIDTHS.copy()
     col_widths[0] = max(len(epic.key) for epic in epics) + COLUMN_MARGIN
     col_widths[1] = max(len(epic.summary) for epic in epics)
     return col_widths
 
 
-def format_counts(stats: IssueCounts, col_widths) -> str:
-    return (
-        f"{stats.pending:>{col_widths[2]}}"
-        f"{stats.in_progress:>{col_widths[3]}}"
-        f"{stats.done:>{col_widths[4]}}"
-        f"{stats.total:>{col_widths[5]}}"
+def epic_row(col_widths: List[int], epic: Epic) -> str:
+    return format_row(
+        col_widths,
+        [
+            epic.key,
+            epic.summary,
+            epic.issue_counts.pending,
+            epic.issue_counts.in_progress,
+            epic.issue_counts.done,
+            epic.issue_counts.total,
+        ],
     )
 
 
-def accumulate_all_counts_for(epics):
+def total_row(col_widths: List[int], total_counts: IssueCounts) -> str:
+    return format_row(
+        col_widths,
+        [
+            "",
+            "",
+            total_counts.pending,
+            total_counts.in_progress,
+            total_counts.done,
+            total_counts.total,
+        ],
+    )
+
+
+def format_row(col_widths: List[int], cell_values: List[Any]) -> str:
+    return (
+        f"{cell_values[0]:<{col_widths[0]}}"
+        f"{cell_values[1]:<{col_widths[1]}}"
+        f"{cell_values[2]:>{col_widths[2]}}"
+        f"{cell_values[3]:>{col_widths[3]}}"
+        f"{cell_values[4]:>{col_widths[4]}}"
+        f"{cell_values[5]:>{col_widths[5]}}"
+    )
+
+
+def accumulate_all_counts_for(epics) -> IssueCounts:
     return reduce(
         lambda accumulation, epic: accumulation + epic.issue_counts,
         epics,
