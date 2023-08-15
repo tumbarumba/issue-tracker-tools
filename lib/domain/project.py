@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import reduce
 from typing import List, Type, TypeVar
 
-from .issue import Epic
+from .epic import Epic
 from .issue_counts import IssueCounts
 from .issue_provider import IssueProvider
 
@@ -11,6 +11,8 @@ T = TypeVar("T", bound="Parent")  # noqa
 
 
 class Project:
+    """A large unit of work, encapsulating multiple smaller units of work described by Epics"""
+
     def __init__(self: Project, project_key: str, epics: List[Epic]):
         self.key = project_key
         self.epics = epics

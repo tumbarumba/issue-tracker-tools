@@ -1,4 +1,4 @@
-from lib.issues.issue_counts import IssueCounts
+from lib.domain.issue_counts import IssueCounts
 
 
 def test_can_add_issue_counts():

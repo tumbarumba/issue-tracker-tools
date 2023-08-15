@@ -7,7 +7,7 @@ from jira.resources import Comment
 from unittest.mock import Mock
 
 from lib.jira.jira_ext import JiraEpic, JiraServer, JiraIssue
-from lib.issues.issue_counts import IssueCounts
+from lib.domain.issue_counts import IssueCounts
 from lib.reports.report_progress import store_project_counts
 
 

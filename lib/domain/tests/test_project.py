@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 from typing import List
 
-from lib.issues.issue import Epic, Issue
-from lib.issues.issue_counts import IssueCounts
-from lib.issues.project import Project
-from lib.issues.issue_provider import IssueProvider
+from lib.domain.epic import Epic
+from lib.domain.issue import Issue
+from lib.domain.issue_counts import IssueCounts
+from lib.domain.issue_provider import IssueProvider
+from lib.domain.project import Project
 
 
 class StubIssueProvider(IssueProvider):

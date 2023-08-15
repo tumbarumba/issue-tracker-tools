@@ -9,7 +9,7 @@ import click
 
 from lib.cfd.cfd_db import store_project_counts
 from lib.config import load_jira_config, load_project_config, ReportOptions
-from lib.issues.project import Project
+from lib.domain.project import Project
 from lib.jira.jira_ext import JiraServer
 from lib.reports.report_epics import EpicReport
 from lib.reports.report_issue_detail import IssueDetailReport

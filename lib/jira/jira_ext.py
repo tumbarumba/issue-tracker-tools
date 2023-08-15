@@ -1,24 +1,28 @@
 from __future__ import annotations
+
 import os
+import re
+from datetime import datetime
+from typing import Any, Dict, List
+
 import dateutil.parser
 import numpy as np
-import re
 import pytz
-from typing import Any, Dict, List
-from datetime import datetime
 from dotenv import dotenv_values
 from jira import JIRA, Issue
 from jira.client import ResultList
 
 from lib.config import JiraConfig
-from lib.issues.issue import Epic
-from lib.issues.issue_counts import IssueCounts
-from lib.issues.issue_provider import IssueProvider
+from lib.domain.epic import Epic
+from lib.domain.issue_counts import IssueCounts
+from lib.domain.issue_provider import IssueProvider
 
 
 class JiraServer(IssueProvider, JIRA):
     def __init__(self: JiraServer, verbose: bool, jira_config: JiraConfig):
-        super().__init__(token_auth=_load_jira_token(), options={'server': jira_config.url})
+        super().__init__(
+            token_auth=_load_jira_token(), options={"server": jira_config.url}
+        )
         self._verbose = verbose
         self._config = jira_config
         self._custom_fields = self._find_custom_fields()
@@ -33,12 +37,14 @@ class JiraServer(IssueProvider, JIRA):
     def _find_custom_fields(self: JiraServer) -> Dict[str, str]:
         all_fields = self.fields()
         return {
-            "Epic Link":    self._find_custom_field(all_fields, "Epic Link"),
-            "Epic Status":  self._find_custom_field(all_fields, "Epic Status"),
-            "Rank":         self._find_custom_field(all_fields, "Rank"),
+            "Epic Link": self._find_custom_field(all_fields, "Epic Link"),
+            "Epic Status": self._find_custom_field(all_fields, "Epic Status"),
+            "Rank": self._find_custom_field(all_fields, "Rank"),
         }
 
-    def _find_custom_field(self: JiraServer, all_fields: List[Dict[str, Any]], name: str) -> str:
+    def _find_custom_field(
+        self: JiraServer, all_fields: List[Dict[str, Any]], name: str
+    ) -> str:
         field = next(filter(lambda f: f["name"] == name, all_fields))
         if self._verbose:
             print(f"Field '{name}' has id '{field['id']}' on this server")
@@ -62,10 +68,14 @@ class JiraServer(IssueProvider, JIRA):
         return list(map(self._create_epic, self.query_jql_raw(jql)))
 
     def query_project_epics(self: JiraServer, project_label: str) -> List[JiraEpic]:
-        return self.query_jql_epics(f"project = DS AND issuetype = Epic and labels = {project_label} ORDER BY rank")
+        return self.query_jql_epics(
+            f"project = DS AND issuetype = Epic and labels = {project_label} ORDER BY rank"
+        )
 
     def query_open_epics(self: JiraServer) -> List[JiraEpic]:
-        return self.query_jql_epics("project = DS and issueType = Epic and 'Epic Status' != Done order by rank")
+        return self.query_jql_epics(
+            "project = DS and issueType = Epic and 'Epic Status' != Done order by rank"
+        )
 
     def query_fix_version(self: JiraServer, fix_version: str) -> List[JiraIssue]:
         return self.query_jql_issues(f"project = DS AND fixVersion = {fix_version}")
@@ -81,11 +91,15 @@ class JiraServer(IssueProvider, JIRA):
         issue = self.issue(epic_key, expand="changelog")
         return JiraEpic(issue, self)
 
-    def query_resolved_issues(self: JiraServer, from_date: str, to_date: str) -> List[JiraIssue]:
-        jql = f"project = DS and 'Epic Link' is not null and \
+    def query_resolved_issues(
+        self: JiraServer, from_date: str, to_date: str
+    ) -> List[JiraIssue]:
+        jql = (
+            f"project = DS and 'Epic Link' is not null and \
                 status in ('Done', 'Awaiting Demo') and \
                 resolved >= '{from_date}' and resolved < '{to_date}' \
                 order by resolved",
+        )
         return self.query_jql_issues(jql)
 
     def query_issues_in_epic(self: JiraServer, epic_key: str) -> List[JiraIssue]:
@@ -188,11 +202,13 @@ class JiraIssue:
 
     @property
     def epic_summary(self) -> str:
-        return self.raw_issue.raw["fields"][self.custom_fields["Epic Status"]]["summary"]
+        return self.raw_issue.raw["fields"][self.custom_fields["Epic Status"]][
+            "summary"
+        ]
 
     @property
     def rank(self) -> str:
-        return self.raw_issue.raw['fields'][self.custom_fields["Rank"]]
+        return self.raw_issue.raw["fields"][self.custom_fields["Rank"]]
 
     @property
     def url(self) -> str:
@@ -224,7 +240,9 @@ def _load_issue_counts(epic: JiraEpic, jira: JiraServer) -> IssueCounts:
     if len(all_epic_issues) == 0:
         return IssueCounts(estimated_count, 0, 0)
 
-    countable_issues = list(filter(lambda issue: issue.status not in EXCLUDE_STATES, all_epic_issues))
+    countable_issues = list(
+        filter(lambda issue: issue.status not in EXCLUDE_STATES, all_epic_issues)
+    )
 
     actual_total_count = len(countable_issues)
     reported_total_count = max(estimated_count, actual_total_count)
@@ -248,7 +266,9 @@ def _load_epic_estimated_issues(epic: JiraEpic, jira: JiraServer) -> int:
     return estimated_issues
 
 
-def _filter_by_state(issues: List[JiraIssue], states_to_check: List[str]) -> List[JiraIssue]:
+def _filter_by_state(
+    issues: List[JiraIssue], states_to_check: List[str]
+) -> List[JiraIssue]:
     return list(filter(lambda issue: issue.status in states_to_check, issues))
 
 
@@ -286,13 +306,22 @@ def _end_hours(end_time) -> float:
 def _calendar_days(start_time, end_time) -> float | None:
     if not (start_time and end_time):
         return None
-    return (end_time.astimezone(pytz.UTC) - start_time.astimezone(pytz.UTC)).total_seconds() / 60 / 60 / 24
+    return (
+        (
+            end_time.astimezone(pytz.UTC) - start_time.astimezone(pytz.UTC)
+        ).total_seconds()
+        / 60
+        / 60
+        / 24
+    )
 
 
 def _load_jira_token() -> str:
     env_values = {
-        **dotenv_values(".env"),                        # Load env file from current directory
-        **dotenv_values(os.path.expanduser("~/.env")),  # Override with env file from home directory
-        **os.environ                                    # Override with environment variables
+        **dotenv_values(".env"),  # Load env file from current directory
+        **dotenv_values(
+            os.path.expanduser("~/.env")
+        ),  # Override with env file from home directory
+        **os.environ,  # Override with environment variables
     }
-    return env_values.get('jiraToken')
+    return env_values.get("jiraToken")

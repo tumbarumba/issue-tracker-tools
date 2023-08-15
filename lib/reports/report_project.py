@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Any, List
 
-from lib.issues.issue import Epic
-from lib.issues.project import Project
+from lib.domain.epic import Epic
+from lib.domain.project import Project
 
 COLUMN_NAMES = ["Key", "Epic", "Pending", "In Progress", "Done", "Total"]
 COLUMN_MARGIN = 2

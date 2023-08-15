@@ -7,7 +7,7 @@ from pathlib import Path
 import csv
 
 from lib.jira.jira_ext import JiraServer, JiraEpic
-from lib.issues.issue_counts import IssueCounts
+from lib.domain.issue_counts import IssueCounts
 
 
 class ProgressReport:

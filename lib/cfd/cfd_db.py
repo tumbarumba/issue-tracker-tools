@@ -6,8 +6,8 @@ from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
 from lib.config import ReportOptions
-from lib.issues.issue_counts import IssueCounts
-from lib.issues.project import Project
+from lib.domain.issue_counts import IssueCounts
+from lib.domain.project import Project
 
 PROJECT_PROGRESS_CSV = "progress.csv"
 
