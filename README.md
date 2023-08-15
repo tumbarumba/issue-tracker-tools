@@ -1,6 +1,13 @@
-# Jira Tools
+# Issue Tracker Tools
 
-A set of command line tools for interacting with a Jira server and extracting useful information
+A set of command line tools for interacting with an issue tracker (such as Jira) and extracting useful information.
+
+The tools are:
+* `it`: issue tracker reports and information
+* `cfd`: cumulative flow diagram tool
+* `git-tickets`: extract issue keys from git commit messages
+
+These tools are described in more detail below.
 
 ## Installation
 
@@ -12,11 +19,11 @@ pip install -r requirements.txt
 
 ## Configuration
 
-The `jira` script requires a configuration file called `issuetracker.yml` by default.
+The `it` and `cfd` scripts requires a configuration file, called `issuetracker.yml` by default.
 
 ### `issuetracker.yml`
 
-By default, the script will look for this file at `$HOME/issuetracker.yml`, although this can be overriden on the command line using the `-c` or `--config` option.
+The scripts will look for this file at `$HOME/issuetracker.yml` by default, although this can be overriden on the command line using the `-c` or `--config` option.
 
 An example of the Jira config file:
 
@@ -60,49 +67,119 @@ jiraToken=xxxxxxxxxxxxxxxxxxxxx
 
 ## Usage
 
+### Issue Tracker
+
 ```
-➜ jira -h
-Usage: jira [OPTIONS] COMMAND [ARGS]...
+➜ it -h
+Usage: it [OPTIONS] COMMAND [ARGS]...
+
+  Issue tracker reports and information
 
 Options:
   -v, --verbose
-  -j, --jira-config PATH
-  -p, --project-config PATH
-  -h, --help                 Show this message and exit.
+  -c, --config PATH  Location of config file (default: ~/issuetracker.yml)
+  -h, --help         Show this message and exit.
 
 Commands:
-  cumulative-flow  Creates a cumulative flow graph from the progress log.
-  epic-summary     Report on stories within epics.
-  issue            Report on issue detail.
-  progress         Report on progress for a project.
-  resolved         Report on recently closed issues.
-  working          Report on issues currently in progress.
+  epic-summary  Report on stories within epics.
+  epicissues    Generate jql to search issues for epics with a given label
+  issue         Report on issue detail.
+  project       Report on progress for a project.
+  release       Describes a list of tickets as release notes
+  resolved      Report on recently closed issues.
+  working       Report on issues currently in progress.
 ```
 
-### Cumulative Flow
+See below for more details on the issue tracker subcommands.
+
+### Issue Tracker: Epic Summary
 
 ```
-➜ jira cumulative-flow -h
-Usage: jira cumulative-flow [OPTIONS]
-
-  Creates a cumulative flow graph from the progress log.
-
-Options:
-  -o, --open-graph  Open the graph after generation
-  -h, --help        Show this message and exit.
-```
-
-### Epic Summary
-
-```
-➜ jira epic-summary -h   
-Usage: jira epic-summary [OPTIONS]
+➜ it epic-summary -h
+Usage: it epic-summary [OPTIONS]
 
   Report on stories within epics.
 
 Options:
   -s, --subject TEXT
   -h, --help          Show this message and exit.
+```
+
+### Issue Tracker: Issue Detail
+
+```
+➜ it issue -h
+Usage: it issue [OPTIONS] [ISSUE_KEYS]...
+
+  Report on issue detail.
+
+Options:
+  -o, --open                     Open issue in a web browser
+  -f, --update-fix-version TEXT  Update issue with specified fix version
+  -h, --help                     Show this message and exit.
+```
+
+If no options are specific, this report will show detailed information on a issue.
+
+If the `-f` option is specified, each issue will be updated instead, and message printed to show that the issue was
+updated.
+
+### Issue Tracker: Project
+
+```
+➜ it project -h 
+Usage: it project [OPTIONS] PROJECT
+
+  Report on progress for a project.
+
+Options:
+  -h, --help  Show this message and exit.
+```
+
+### Issue Tracker: Release Notes
+
+```
+➜ it release -h
+Usage: it release [OPTIONS] [ISSUE_KEYS]...
+
+  Describes a list of tickets as release notes
+
+Options:
+  -f, --fix-version TEXT  Include all issues with this fix version
+  -t, --no-tasks          Exclude tasks
+  -m, --markdown          Output report as markdown
+  -h, --help              Show this message and exit.
+```
+
+The issue keys can be specified directly on the command line. Alternatively, the `-f` option can be specified, and
+the Jira will be queried to find all issue keys with that specific fix version.
+
+### Issue Tracker: Resolved
+
+```
+➜ it resolved -h
+Usage: it resolved [OPTIONS]
+
+  Report on recently closed issues.
+
+Options:
+  -d, --days INTEGER     include issues resovled this many days prior to today
+  -f, --from [%Y-%m-%d]  include resolved issues from this date onwards
+  -t, --to [%Y-%m-%d]    include issues resolved before this date
+  -h, --help             Show this message and exit.
+```
+
+### Issue Tracker: Working
+
+```
+➜ it working -h 
+Usage: it working [OPTIONS]
+
+  Report on issues currently in progress.
+
+Options:
+  -g, --group  Group issues by epic
+  -h, --help   Show this message and exit.
 ```
 
 ### Git Tickets
@@ -125,76 +202,21 @@ Jira to specify the fix version. For example:
 For more information about how to specify git revision ranges, see
 [https://www.git-scm.com/docs/gitrevisions#_specifying_ranges](https://www.git-scm.com/docs/gitrevisions#_specifying_ranges)
 
-### Issue Detail
+### Cumulative Flow Diagram
 
 ```
-Usage: jira issue [OPTIONS] [ISSUE_KEYS]...
+➜ cfd -h
+Usage: cfd [OPTIONS] PROJECT
 
-  Report on issue detail.
+  Create a cumulative flow diagram for a given project
+
+  Requires a project progress file (progress.csv) in the project directory.
+  This is normally generated by the `it project` command
 
 Options:
-  -o, --open                     Open issue in a web browser
-  -f, --update-fix-version TEXT  Update issue with specified fix version
-  -h, --help                     Show this message and exit.
-```
-
-If no options are specific, this report will show detailed information on a issue.
-
-If the `-f` option is specified, each issue will be updated instead, and message printed to show that the issue was
-updated.
-
-### Progress
-
-```
-➜ jira progress -h    
-Usage: jira progress [OPTIONS]
-
-  Report on progress for a project.
-
-Options:
-  -g, --graph  Generate cumulative flow graph
-  -h, --help   Show this message and exit.
-```
-
-### Release Notes
-
-```
-Usage: jira release [OPTIONS] [ISSUE_KEYS]...
-
-  Describes a list of tickets as release notes
-
-Options:
-  -f, --fix-version TEXT  Include all issues with this fix version
-  -t, --no-tasks          Exclude tasks
+  -v, --verbose
+  -c, --config PATH
+  -o, --open-graph        Open the graph after generation
+  -t, --today [%Y-%m-%d]  Override today's date
   -h, --help              Show this message and exit.
-```
-
-The issue keys can be specified directly on the command line. Alternatively, the `-f` option can be specified, and
-the Jira will be queried to find all issue keys with that specific fix version.
-
-### Resolved
-
-```
-Usage: jira resolved [OPTIONS]
-
-  Report on recently closed issues.
-
-Options:
-  -d, --days INTEGER     include issues resovled this many days prior to today
-  -f, --from [%Y-%m-%d]  include resolved issues from this date onwards
-  -t, --to [%Y-%m-%d]    include issues resolved before this date
-  -h, --help             Show this message and exit.
-```
-
-### Working
-
-```
-➜ jira working -h
-Usage: jira working [OPTIONS]
-
-  Report on issues currently in progress.
-
-Options:
-  -g, --group  Group issues by epic
-  -h, --help   Show this message and exit.
 ```

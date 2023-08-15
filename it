@@ -23,13 +23,19 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option("-v", "--verbose", is_flag=True)
-@click.option("-c", "--config", type=click.Path(exists=True))
+@click.option(
+    "-c",
+    "--config",
+    type=click.Path(exists=True),
+    help="Location of config file (default: ~/issuetracker.yml)",
+)
 @click.pass_context
 def jira(
     ctx: click.Context,
     verbose: bool,
     config: click.Path,
 ) -> None:
+    """Issue tracker reports and information"""
     ctx.obj = build_report_options(verbose, config)
 
 

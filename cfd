@@ -10,7 +10,7 @@ from lib.cfd.cumulative_flow_graph import CumulativeFlowGraph
 DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
 
-@click.command()
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option("-v", "--verbose", is_flag=True)
 @click.option("-c", "--config", type=click.Path(exists=True))
 @click.option(
@@ -35,6 +35,11 @@ def cfd(
     today: click.DateTime,
     project: str,
 ) -> None:
+    """Create a cumulative flow diagram for a given project
+
+    Requires a project progress file (progress.csv) in the project directory. This is normally generated
+    by the `it project` command
+    """
     options = build_report_options(verbose, config)
     report_date = date_option_or_today(today)
     csv_file = f"{options.report_dir}/{project}/progress.csv"
