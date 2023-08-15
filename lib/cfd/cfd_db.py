@@ -15,16 +15,16 @@ PROJECT_PROGRESS_CSV = "progress.csv"
 def store_project_counts(
     count_date: str, project: Project, options: ReportOptions
 ) -> None:
-    progress_csv_path = get_progress_csv_path(options)
+    progress_csv_path = get_progress_csv_path(options, project.key)
     csv_data = read_csv_data(progress_csv_path)
     add_missing_dates(csv_data, count_date)
     csv_data[count_date] = project.issue_counts
     write_csv_data(progress_csv_path, project.key, csv_data)
 
 
-def get_progress_csv_path(options):
+def get_progress_csv_path(options: ReportOptions, project_key: str) -> Path:
     report_path = Path(options.report_dir)
-    project_report_path = report_path / options.project_config.project_label
+    project_report_path = report_path / project_key
     if not project_report_path.exists():
         print(f"Making directory {str(project_report_path)}")
         project_report_path.mkdir(parents=True, exist_ok=True)

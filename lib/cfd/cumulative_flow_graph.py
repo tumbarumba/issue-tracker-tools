@@ -59,12 +59,12 @@ class CumulativeFlowGraph:
         project_config: ProjectConfig,
         csv_file: str,
         png_file: str,
-        today: datetime.date,
+        report_date: datetime.date,
     ):
         self.project_config = project_config
         self.csv_file = csv_file
         self.png_file = png_file
-        self.today = today
+        self.report_date = report_date
 
     def run(self, open_graph):
         print(f"Reading cumulative flow data from {str(self.csv_file)}")
@@ -102,7 +102,7 @@ class CumulativeFlowGraph:
 
     def read_csv_values(self):
         data_frame = pandas.read_csv(self.csv_file)
-        return FlowData(data_frame, self.today)
+        return FlowData(data_frame, self.report_date)
 
     def select_final_axis(self, flow_data):
         start_date = flow_data.dates[0]
@@ -155,7 +155,10 @@ class CumulativeFlowGraph:
             patches.Patch(facecolor=colours["In Progress"], label="In Progress"),
             patches.Patch(facecolor=colours["Done"], label="Done"),
             Line2D(
-                [0], [0], color=colours["Current Date"], label=f"{self.today} (Today)"
+                [0],
+                [0],
+                color=colours["Current Date"],
+                label=f"{self.report_date} (Today)",
             ),
         ]
         if flow_data.optimistic_completion_date:
@@ -202,22 +205,22 @@ class CumulativeFlowGraph:
         pyplot.xlabel("Dates", labelpad=12, fontsize=12)
         pyplot.ylabel("Total Stories", labelpad=9, fontsize=12)
         pyplot.ylim([0, max_y_scale])
-        pyplot.title(self.project_config.project_name, pad=9, fontsize=16)
+        pyplot.title(self.project_config.name, pad=9, fontsize=16)
         pyplot.gca().margins(0, 0)
 
     def write_current_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.today + timedelta(days=-FlowData.TREND_PERIOD + 1)
+        start_date = self.report_date + timedelta(days=-FlowData.TREND_PERIOD + 1)
         if start_date < final_x_axis[0]:
             start_date = final_x_axis[0]
-        end_date = self.today
+        end_date = self.report_date
         self.write_trend_line(
             final_x_axis, colours, start_date, end_date, flow_data.current_trend
         )
 
     def write_optimistic_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.today
+        start_date = self.report_date
         end_date = final_x_axis[-1]
         self.write_trend_line(
             final_x_axis, colours, start_date, end_date, flow_data.optimistic_trend
@@ -225,7 +228,7 @@ class CumulativeFlowGraph:
 
     def write_pessimistic_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.today
+        start_date = self.report_date
         end_date = final_x_axis[-1]
         self.write_trend_line(
             final_x_axis, colours, start_date, end_date, flow_data.pessimistic_trend
@@ -246,7 +249,7 @@ class CumulativeFlowGraph:
         self, max_total, final_x_axis, predicted_end_date, colours
     ):
         """checks for existence of data + calls writing func"""
-        self.write_date_line(max_total, self.today, colours["Current Date"])
+        self.write_date_line(max_total, self.report_date, colours["Current Date"])
         if self.project_config.milestones is not None:
             for i in range(len(self.project_config.milestones)):
                 milestone = self.project_config.milestones[i]

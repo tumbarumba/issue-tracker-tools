@@ -12,47 +12,32 @@ pip install -r requirements.txt
 
 ## Configuration
 
-The `jira` script requires at least 1 configuration file, although this can be split into multiple files, depending upon needs. These are discussed below.
+The `jira` script requires a configuration file called `issuetracker.yml` by default.
 
-### `jiraconfig.yml`
+### `issuetracker.yml`
 
-`jiraconfig.yml` contains information about the Jira server. By default, the script will look for this file at `~/jiraconfig.yml`, although this can be overriden on the command line using the `-j` or `--jira-config` options.
+By default, the script will look for this file at `$HOME/issuetracker.yml`, although this can be overriden on the command line using the `-c` or `--config` option.
 
 An example of the Jira config file:
 
 ```yaml
+provider: jira
+report_dir: ~/jirareports
 jira:
   url: https://url.of.jira/
-```
-
-### `projectconfig.yml`
-
-Some of the reports use the concept of a "project", which is generally a sub-set of issue that can be selected from a top level Jira server. By default, the project configuration file is the same as the Jira configuration file (described above), although the project configuration is storied in a different top level key. To allow for the case where there are multiple concurrent projects, the project configuration file can be specified on the command line using the `-p` or `--project-config` options.
-
-An example of the project config file:
-
-```yaml
-project:
-  name: Project Name
-  label: project_label
-  report_dir: ~/jirareports
-  milestones:
-  - name: Iteration 3 Demo
-    date: 2022-08-31
-```
-
-In the case where the Jira config and project config are stored in the same file, this would look like this:
-
-```yaml
-jira:
-  url: https://url.of.jira/
-project:
-  name: Project Name
-  label: project_label
-  report_dir: ~/jirareports
-  milestones:
-  - name: Iteration 3 Demo
-    date: 2022-08-31
+projects:
+  - name: Project Name
+    key: project_label
+    milestones:
+      - name: Iteration 3 Demo
+        date: 2022-08-31
+  - name: Another Project
+    key: project_label_2
+    milestones:
+      - name: Project 2 Checkpoint
+        date: 2023-09-30
+      - name: Project 2 Delivery
+        date: 2023-10-31
 ```
 
 ### Authentication

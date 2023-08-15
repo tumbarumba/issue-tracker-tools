@@ -4,6 +4,7 @@ import os
 import yaml
 
 
+REPORT_DIR_DEFAULT = "~/jirareports"
 DEFAULT_STATUSES = [
     {"display": "🔵", "name": "Backlog"},
     {"display": "🌑", "name": "Selected for Development"},
@@ -15,65 +16,64 @@ DEFAULT_STATUSES = [
     {"display": "🔆", "name": "Awaiting Demo"},
     {"display": "✅", "name": "Done"},
     {"display": "C", "name": "Closed"},
-    {"display": "D", "name": "Duplicate"}
+    {"display": "D", "name": "Duplicate"},
 ]
-
 DEFAULT_ISSUE_TYPES = [
     {"display": "📖", "name": "Story"},
     {"display": "🐞", "name": "Bug"},
-    {"display": "🔧", "name": "Task"}
+    {"display": "🔧", "name": "Task"},
 ]
+
+
+class IssueTrackerConfig:
+    def __init__(self: IssueTrackerConfig, config: Dict[str, Any]):
+        self.provider = config.get("provider", "jira")
+        self.report_dir = os.path.expanduser(
+            config.get("report_dir", REPORT_DIR_DEFAULT)
+        )
+        self.jira_config = JiraConfig(config["jira"])
+        self.projects = build_projects(config.get("projects", []))
+
+
+def build_projects(project_configs: List[Dict[str, Any]]):
+    projects = map(
+        lambda project_config: ProjectConfig(project_config),
+        project_configs,
+    )
+    return dict((project.key, project) for project in projects)
 
 
 class JiraConfig:
     def __init__(self: JiraConfig, jira_config: Dict[str, Any]):
-        self.url: str = jira_config['url']
-        self.statuses: Dict[str, Dict[str, str]] = jira_config.get("statuses", DEFAULT_STATUSES)
-        self.issuetypes: Dict[str, Dict[str, str]] = jira_config.get("issuetypes", DEFAULT_ISSUE_TYPES)
+        self.url: str = jira_config["url"]
+        self.statuses: Dict[str, Dict[str, str]] = jira_config.get(
+            "statuses", DEFAULT_STATUSES
+        )
+        self.issuetypes: Dict[str, Dict[str, str]] = jira_config.get(
+            "issuetypes", DEFAULT_ISSUE_TYPES
+        )
 
 
 class ProjectConfig:
     def __init__(self: ProjectConfig, project_config: Dict[str, Any]):
-        self.project_name: str = project_config.get("name", "Unnamed Project")
-        self.project_label: str = project_config.get("label", "(none)")
+        self.name: str = project_config.get("name", "Unnamed Project")
+        self.key: str = project_config.get("key", "(none)")
         self.milestones: List[Dict[str, Any]] = project_config.get("milestones", [])
-        self.report_dir: str | None = project_config.get("report_dir", None)
-
-
-REPORT_DIR_DEFAULT = "~/jirareports"
 
 
 class ReportOptions(object):
     def __init__(
-            self: ReportOptions,
-            verbose: bool = False,
-            project_config: ProjectConfig = None,
-            jira_config: JiraConfig = None):
+        self: ReportOptions,
+        issue_tracker_config: IssueTrackerConfig,
+        verbose: bool = False,
+    ):
+        self.jira_config = issue_tracker_config.jira_config
+        self.project_configs = issue_tracker_config.projects
+        self.report_dir = issue_tracker_config.report_dir
         self.verbose: bool = verbose
-        self.project_config: ProjectConfig = project_config
-        self.jira_config: JiraConfig = jira_config
-        self.report_dir: str = self.lookup_report_dir()
-
-    def lookup_report_dir(self) -> str:
-        report_dir = self.project_config.report_dir or REPORT_DIR_DEFAULT
-        if "~" in report_dir:
-            report_dir = os.path.expanduser(report_dir)
-        if self.verbose:
-            print(f"Using report_dir {report_dir}")
-        return report_dir
 
 
-def load_yaml(config_file: str, key: str) -> Dict[str, Any]:
-    with open(config_file, 'r') as file:
+def load_issue_tracker_config(config_file: str) -> IssueTrackerConfig:
+    with open(config_file, "r") as file:
         config = yaml.safe_load(file)
-        return config[key]
-
-
-def load_project_config(config_file: str) -> ProjectConfig:
-    config_data = load_yaml(config_file, "project")
-    return ProjectConfig(config_data)
-
-
-def load_jira_config(config_file: str) -> JiraConfig:
-    config_data = load_yaml(config_file, "jira")
-    return JiraConfig(config_data)
+        return IssueTrackerConfig(config)

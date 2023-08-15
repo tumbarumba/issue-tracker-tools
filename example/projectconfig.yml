@@ -1,7 +1,0 @@
-project:
-  name: Project Name
-  label: project_label
-  report_dir: ~/jirareports
-  milestones:
-  - name: Iteration 3 Demo
-    date: 2022-08-31

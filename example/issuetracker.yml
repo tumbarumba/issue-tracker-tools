@@ -1,0 +1,17 @@
+provider: jira
+report_dir: ~/jirareports
+jira:
+  url: https://url.of.jira/
+projects:
+  - name: Project Name
+    key: project_label
+    milestones:
+      - name: Iteration 3 Demo
+        date: 2022-08-31
+  - name: Another Project
+    key: project_label_2
+    milestones:
+      - name: Project 2 Checkpoint
+        date: 2023-09-30
+      - name: Project 2 Delivery
+        date: 2023-10-31
