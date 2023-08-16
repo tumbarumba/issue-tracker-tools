@@ -1,4 +1,7 @@
 .env
 __pycache__
-graphs/
+.pytest_cache
 .idea/
+build/
+dist/
+*.egg-info
