@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import os
+import pkg_resources
 import sys
 import webbrowser
 from datetime import date
@@ -21,7 +22,23 @@ from ittools.reports.report_working import WorkingReport
 DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
 
+def show_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    version = pkg_resources.require("issue-tracker-tools")[0].version
+    print(f"Issue tracker tools, version {version}")
+    sys.exit(0)
+
+
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.option(
+    "--version",
+    is_flag=True,
+    callback=show_version,
+    expose_value=False,
+    is_eager=True,
+    help="Display version information",
+)
 @click.option("-v", "--verbose", is_flag=True)
 @click.option(
     "-c",

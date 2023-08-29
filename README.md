@@ -19,10 +19,11 @@ Setup your Python environment (a virtualenv is preferred).
 pip install -r requirements.txt
 ```
 
-You can build the project by running the command:
+You can build and install the issue tracker tools by running the commands:
 
 ```
 python -m build
+pip install $(find dist -name "*.whl")
 ```
 
 To install source code for direct use:
