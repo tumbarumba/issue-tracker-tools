@@ -107,7 +107,7 @@ class JiraServer(IssueProvider, JIRA):
 
     def query_working_issues(self: JiraServer) -> List[JiraIssue]:
         jql = "project = DS and issuetype in ('Story', 'Task', 'Bug') and \
-               status in ('In Progress', 'In Review', 'Awaiting Merge') \
+               status in ('In Progress', 'In Review', 'Awaiting Merge', 'Under Test') \
                ORDER BY created ASC"
         return self.query_jql_issues(jql)
 
