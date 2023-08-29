@@ -11,10 +11,24 @@ These tools are described in more detail below.
 
 ## Installation
 
-Setup your Python environment, cd to the base directory, and run the command:
+Setup your Python environment (a virtualenv is preferred).
+
+`cd` to the base directory of the cloned repository, and run the command:
 
 ```
 pip install -r requirements.txt
+```
+
+You can build the project by running the command:
+
+```
+python -m build
+```
+
+To install source code for direct use:
+
+```
+pip install --editable .
 ```
 
 ## Configuration
