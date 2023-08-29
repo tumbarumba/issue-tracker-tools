@@ -16,18 +16,18 @@ class ProjectReport:
     def __init__(self: ProjectReport, project: Project):
         self.project = project
         self.col_widths = calculate_column_widths(project.epics)
+        self.row_separator = sum(self.col_widths) * "="
 
     def run(self: ProjectReport, report_date: str) -> None:
         print(f"Project: {self.project.key}")
         print(f"Date: {report_date}")
         print()
 
-        row_separator = sum(self.col_widths) * "="
         print(self.format_row(COLUMN_NAMES))
-        print(row_separator)
+        print(self.row_separator)
         for epic in self.project.epics:
             print(self.format_row(epic_row_values(epic)))
-        print(row_separator)
+        print(self.row_separator)
         print(self.format_row(total_row_values(self.project)))
         print()
 
