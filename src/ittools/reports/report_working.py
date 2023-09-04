@@ -14,6 +14,9 @@ class WorkingReport:
             issuetype["name"]: issuetype["display"]
             for index, issuetype in enumerate(opts.jira_config.issuetypes)
         }
+        self.status_display = {
+            status["name"]: status["display"] for index, status in enumerate(opts.jira_config.statuses)
+        }
 
     def run(self: WorkingReport, group: bool) -> None:
         report_issues = self.jira.query_working_issues()
@@ -62,7 +65,8 @@ class WorkingReport:
 
     def print_issue(self: WorkingReport, issue: JiraIssue):
         type_icon = self.type_display[issue.issue_type]
+        status_icon = self.status_display[issue.status]
         assignee = issue.raw_issue.fields.assignee
         print(
-            f"{issue.duration:5.2f} {type_icon} {issue.key}: {issue.summary} ({assignee})"
+            f"{issue.duration:5.2f} {type_icon}{status_icon} {issue.key}: {issue.summary} ({assignee})"
         )
