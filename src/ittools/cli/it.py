@@ -11,7 +11,7 @@ import click
 from ittools.cfd.cfd_db import store_project_counts
 from ittools.config import load_issue_tracker_config, ReportOptions
 from ittools.domain.project import Project
-from ittools.jira.jira_ext import JiraServer
+from ittools.jira.jira_ext import JiraServer, JiraEpic
 from ittools.reports.report_epics import EpicReport
 from ittools.reports.report_issue_detail import IssueDetailReport
 from ittools.reports.report_project import ProjectReport
@@ -64,14 +64,25 @@ def build_report_options(verbose: bool, config_file: click.Path) -> ReportOption
     return ReportOptions(config, verbose)
 
 
+def load_epics(server: JiraServer, project: str, epic_keys: List[str]) -> List[JiraEpic]:
+    if project:
+        return server.query_project_epics(project)
+    else:
+        return [server.jira_epic(key) for key in epic_keys]
+
+
 @issue_tracker.command()
-@click.option("-s", "--subject", default="")
+@click.option("-p", "--project", default=None)
+@click.argument("epic_keys", nargs=-1)
 @click.pass_context
-def epic_summary(ctx: click.Context, subject: str) -> None:
+def epic_summary(ctx: click.Context, project: str, epic_keys: List[str]) -> None:
     """Report on stories within epics."""
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
-    EpicReport(options, server).run(subject)
+    epics = load_epics(server, project, epic_keys)
+    if not epics:
+        ctx.fail("Either project or epic key(s) must be specified")
+    EpicReport(options, server).run(epics)
 
 
 def add_fix_version(
