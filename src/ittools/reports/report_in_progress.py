@@ -6,8 +6,8 @@ from ittools.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
 from ittools.config import ReportOptions
 
 
-class WorkingReport:
-    def __init__(self: WorkingReport, opts: ReportOptions, jira: JiraServer):
+class InProgressReport:
+    def __init__(self: InProgressReport, opts: ReportOptions, jira: JiraServer):
         self.verbose = opts.verbose
         self.jira = jira
         self.type_display = {
@@ -18,21 +18,21 @@ class WorkingReport:
             status["name"]: status["display"] for index, status in enumerate(opts.jira_config.statuses)
         }
 
-    def run(self: WorkingReport, group: bool) -> None:
+    def run(self: InProgressReport, group: bool) -> None:
         report_issues = self.jira.query_working_issues()
-        print(f"Working issue count: {len(report_issues)}\n")
+        print(f"In progress issue count: {len(report_issues)}\n")
 
         if group:
             self.report_issues_grouped_by_epic(report_issues)
         else:
             self.report_issues(report_issues)
 
-    def report_issues(self: WorkingReport, issues: List[JiraIssue]) -> None:
+    def report_issues(self: InProgressReport, issues: List[JiraIssue]) -> None:
         for issue in sorted(issues, key=lambda i: i.duration):
             self.print_issue(issue)
 
     def report_issues_grouped_by_epic(
-        self: WorkingReport, issues: List[JiraIssue]
+        self: InProgressReport, issues: List[JiraIssue]
     ) -> None:
         epics = self.epics_for(issues)
         sorted_issues = sorted(issues, key=lambda i: self.rank_for(i.epic_key, epics))
@@ -48,7 +48,7 @@ class WorkingReport:
                 self.print_issue(issue)
             print()
 
-    def epics_for(self: WorkingReport, issues: List[JiraIssue]) -> Dict[str, JiraEpic]:
+    def epics_for(self: InProgressReport, issues: List[JiraIssue]) -> Dict[str, JiraEpic]:
         epics: Dict[str, JiraEpic] = {}
         for issue in issues:
             if issue.epic_key and issue.epic_key not in epics:
@@ -57,13 +57,13 @@ class WorkingReport:
 
         return epics
 
-    def rank_for(self: WorkingReport, epic_key: str, epics: Dict[str, JiraEpic]) -> str:
+    def rank_for(self: InProgressReport, epic_key: str, epics: Dict[str, JiraEpic]) -> str:
         if epic_key in epics:
             return epics[epic_key].rank
         else:
             return "Ω"  # Omega should sort last alphabetically
 
-    def print_issue(self: WorkingReport, issue: JiraIssue):
+    def print_issue(self: InProgressReport, issue: JiraIssue):
         type_icon = self.type_display[issue.issue_type]
         status_icon = self.status_display[issue.status]
         assignee = issue.raw_issue.fields.assignee

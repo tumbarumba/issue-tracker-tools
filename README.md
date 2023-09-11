@@ -98,11 +98,11 @@ Options:
 Commands:
   epic-summary  Report on stories within epics.
   epicissues    Generate jql to search issues for epics with a given label
+  in-progress   Report on issues currently in progress.
   issue         Report on issue detail.
   project       Report on progress for a project.
   release       Describes a list of tickets as release notes
   resolved      Report on recently closed issues.
-  working       Report on issues currently in progress.
 ```
 
 See below for more details on the issue tracker subcommands.
@@ -118,6 +118,20 @@ Usage: it epic-summary [OPTIONS]
 Options:
   -s, --subject TEXT
   -h, --help          Show this message and exit.
+```
+
+### Issue Tracker: In Progress
+
+```
+➜ it in-progress -h
+Usage: it in-progress [OPTIONS]
+
+  Report on issues currently in progress.
+
+Options:
+  -g, --group  Group issues by epic
+  -h, --help   Show this message and exit.
+
 ```
 
 ### Issue Tracker: Issue Detail
@@ -182,19 +196,6 @@ Options:
   -f, --from [%Y-%m-%d]  include resolved issues from this date onwards
   -t, --to [%Y-%m-%d]    include issues resolved before this date
   -h, --help             Show this message and exit.
-```
-
-### Issue Tracker: Working
-
-```
-➜ it working -h 
-Usage: it working [OPTIONS]
-
-  Report on issues currently in progress.
-
-Options:
-  -g, --group  Group issues by epic
-  -h, --help   Show this message and exit.
 ```
 
 ### Git Tickets

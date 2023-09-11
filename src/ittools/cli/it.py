@@ -17,7 +17,7 @@ from ittools.reports.report_issue_detail import IssueDetailReport
 from ittools.reports.report_project import ProjectReport
 from ittools.reports.report_release_notes import ReleaseNotesReport
 from ittools.reports.report_resolved import ResolvedReport
-from ittools.reports.report_working import WorkingReport
+from ittools.reports.report_in_progress import InProgressReport
 
 DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
@@ -83,6 +83,16 @@ def epic_summary(ctx: click.Context, project: str, epic_keys: List[str]) -> None
     if not epics:
         ctx.fail("Either project or epic key(s) must be specified")
     EpicReport(options, server).run(epics)
+
+
+@issue_tracker.command()
+@click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
+@click.pass_context
+def in_progress(ctx: click.Context, group: bool) -> None:
+    """Report on issues currently in progress."""
+    options: ReportOptions = ctx.obj
+    server = JiraServer(options.verbose, options.jira_config)
+    InProgressReport(options, server).run(group)
 
 
 def add_fix_version(
@@ -213,16 +223,6 @@ def resolved(
         to_date = to_date.date()
 
     ResolvedReport(options, server).run(days, from_date, to_date, csv_file)
-
-
-@issue_tracker.command()
-@click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
-@click.pass_context
-def working(ctx: click.Context, group: bool) -> None:
-    """Report on issues currently in progress."""
-    options: ReportOptions = ctx.obj
-    server = JiraServer(options.verbose, options.jira_config)
-    WorkingReport(options, server).run(group)
 
 
 @issue_tracker.command()
