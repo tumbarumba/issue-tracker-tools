@@ -86,13 +86,14 @@ def epic_summary(ctx: click.Context, project: str, epic_keys: List[str]) -> None
 
 
 @issue_tracker.command()
-@click.option("-g", "--group", is_flag=True, default=False, help="Group issues by epic")
+@click.option("-e", "--epic", is_flag=True, default=False, help="Group issues by epic")
+@click.option("-t", "--team", is_flag=True, default=False, help="Group issues by team")
 @click.pass_context
-def in_progress(ctx: click.Context, group: bool) -> None:
+def in_progress(ctx: click.Context, epic: bool, team: bool) -> None:
     """Report on issues currently in progress."""
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
-    InProgressReport(options, server).run(group)
+    InProgressReport(options, server).run(epic, team)
 
 
 def add_fix_version(

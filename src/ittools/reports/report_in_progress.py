@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Dict, List
-from itertools import groupby
 
-from ittools.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
+import re
+from itertools import groupby
+from typing import Dict, List
+
 from ittools.config import ReportOptions
+from ittools.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
 
 
 class InProgressReport:
@@ -18,12 +20,14 @@ class InProgressReport:
             status["name"]: status["display"] for index, status in enumerate(opts.jira_config.statuses)
         }
 
-    def run(self: InProgressReport, group: bool) -> None:
+    def run(self: InProgressReport, group_by_epic: bool, group_by_team: bool) -> None:
         report_issues = self.jira.query_working_issues()
         print(f"In progress issue count: {len(report_issues)}\n")
 
-        if group:
+        if group_by_epic:
             self.report_issues_grouped_by_epic(report_issues)
+        elif group_by_team:
+            self.report_issues_grouped_by_team(report_issues)
         else:
             self.report_issues(report_issues)
 
@@ -44,8 +48,22 @@ class InProgressReport:
                 print(f"{epic.key}: {epic.summary}")
             else:
                 print("No Epic:")
-            for issue in epic_issues:
-                self.print_issue(issue)
+            self.report_issues(epic_issues)
+            print()
+
+    def report_issues_grouped_by_team(
+        self: InProgressReport, issues: List[JiraIssue]
+    ) -> None:
+        epics = self.epics_for(issues)
+        sorted_issues = sorted(issues, key=lambda i: _team_for(i.epic_key, epics))
+        for team, team_issues in groupby(
+            sorted_issues, lambda issue: _team_for(issue.epic_key, epics) or ""
+        ):
+            if team:
+                print(f"Team: {team}")
+            else:
+                print("No Team:")
+            self.report_issues(team_issues)
             print()
 
     def epics_for(self: InProgressReport, issues: List[JiraIssue]) -> Dict[str, JiraEpic]:
@@ -70,3 +88,21 @@ class InProgressReport:
         print(
             f"{issue.duration:5.2f} {type_icon}{status_icon} {issue.key}: {issue.summary} ({assignee})"
         )
+
+
+def _team_for(epic_key: str, epics: Dict[str, JiraEpic]) -> str:
+    if epic_key in epics:
+        labels = epics[epic_key].labels
+        return _team_from_labels(labels)
+    else:
+        return "Ω"  # Omega should sort last alphabetically
+
+
+def _team_from_labels(labels: List[str]):
+    team_pattern = re.compile(r"^Team(\w+)(_.*)?$")
+    for label in labels:
+        match = team_pattern.match(label)
+        if match:
+            return match.group(1)
+    return ""
+

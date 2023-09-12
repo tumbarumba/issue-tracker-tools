@@ -176,6 +176,10 @@ class JiraIssue:
         return self.raw_issue.fields.issuetype.name
 
     @property
+    def labels(self: JiraIssue) -> List[str]:
+        return self.raw_issue.fields.labels
+
+    @property
     def duration(self: JiraIssue) -> float | None:
         if not self._duration:
             self._init_durations()
