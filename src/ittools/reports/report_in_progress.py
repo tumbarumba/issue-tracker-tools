@@ -105,4 +105,3 @@ def _team_from_labels(labels: List[str]):
         if match:
             return match.group(1)
     return ""
-
