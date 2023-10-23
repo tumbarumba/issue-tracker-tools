@@ -7,7 +7,7 @@ from jira import Issue
 from jira.resources import Comment
 
 from ittools.domain.issue_counts import IssueCounts
-from ittools.jira.jira_ext import JiraEpic, JiraServer, JiraIssue
+from ittools.jira.jira_ext import JiraEpic, JiraIssue, JiraServer
 
 
 def assert_equal_counts(actual: IssueCounts, expected: IssueCounts):
