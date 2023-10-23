@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from ittools.domain.epic import Epic
-from ittools.domain.issue import Issue
+from ittools.domain.issue import Issue, IssueState
 from ittools.domain.issue_counts import IssueCounts
 from ittools.domain.issue_provider import IssueProvider
 from ittools.domain.project import Project
@@ -17,9 +17,19 @@ class StubIssueProvider(IssueProvider):
         return self.epics
 
 
-class StubEpic(Epic):
-    def __init__(self: StubEpic, key: str, summary: str, issues: List[Issue]):
+class StubIssue(Issue):
+    def __init__(self: StubIssue, key: str, summary: str, states: List[IssueState]):
         super().__init__(key, summary)
+        self._states = states
+
+    @property
+    def states(self: StubIssue) -> List[IssueState]:
+        return self._states
+
+
+class StubEpic(StubIssue, Epic):
+    def __init__(self: StubEpic, key: str, summary: str, issues: List[Issue]):
+        super().__init__(key, summary, [])
         self.issues = issues
 
     @property

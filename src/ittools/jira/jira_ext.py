@@ -9,11 +9,13 @@ import dateutil.parser
 import numpy as np
 import pytz
 from dotenv import dotenv_values
-from jira import JIRA, Issue
+from jira import JIRA
+from jira import Issue as AtlassianIssue
 from jira.client import ResultList
 
 from ittools.config import JiraConfig
 from ittools.domain.epic import Epic
+from ittools.domain.issue import Issue, IssueState
 from ittools.domain.issue_counts import IssueCounts
 from ittools.domain.issue_provider import IssueProvider
 
@@ -50,13 +52,13 @@ class JiraServer(IssueProvider, JIRA):
             print(f"Field '{name}' has id '{field['id']}' on this server")
         return field["id"]
 
-    def _create_issue(self: JiraServer, raw_issue: Issue):
+    def _create_issue(self: JiraServer, raw_issue: AtlassianIssue):
         return JiraIssue(raw_issue, self._custom_fields)
 
-    def _create_epic(self: JiraServer, raw_issue: Issue):
+    def _create_epic(self: JiraServer, raw_issue: AtlassianIssue):
         return JiraEpic(raw_issue, self)
 
-    def query_jql_raw(self: JiraServer, jql: str) -> ResultList[Issue]:
+    def query_jql_raw(self: JiraServer, jql: str) -> ResultList[AtlassianIssue]:
         if self._verbose:
             print(f"running jql: {jql}")
         return self.search_issues(jql, expand="changelog", maxResults=1000)
@@ -112,8 +114,9 @@ class JiraServer(IssueProvider, JIRA):
         return self.query_jql_issues(jql)
 
 
-class JiraIssue:
-    def __init__(self: JiraIssue, raw_issue: Issue, custom_fields: Dict[str, str]):
+class JiraIssue(Issue):
+    def __init__(self: JiraIssue, raw_issue: AtlassianIssue, custom_fields: Dict[str, str]):
+        super().__init__(raw_issue.key, raw_issue.fields.summary)
         self.raw_issue = raw_issue
         self.custom_fields = custom_fields
         self._duration = None
@@ -160,24 +163,12 @@ class JiraIssue:
         self.raw_issue.add_field_value("fixVersions", {"name": new_fix_version})
 
     @property
-    def key(self: JiraIssue) -> str:
-        return self.raw_issue.key
-
-    @property
-    def summary(self: JiraIssue) -> str:
-        return self.raw_issue.fields.summary
-
-    @property
     def status(self: JiraIssue) -> str:
         return self.raw_issue.fields.status.name
 
     @property
     def issue_type(self: JiraIssue) -> str:
         return self.raw_issue.fields.issuetype.name
-
-    @property
-    def labels(self: JiraIssue) -> List[str]:
-        return self.raw_issue.fields.labels
 
     @property
     def duration(self: JiraIssue) -> float | None:
@@ -201,16 +192,6 @@ class JiraIssue:
         return self.raw_issue.raw["fields"][self.custom_fields["Epic Link"]]
 
     @property
-    def epic_status(self) -> str:
-        return self.raw_issue.raw["fields"][self.custom_fields["Epic Status"]]["value"]
-
-    @property
-    def epic_summary(self) -> str:
-        return self.raw_issue.raw["fields"][self.custom_fields["Epic Status"]][
-            "summary"
-        ]
-
-    @property
     def rank(self) -> str:
         return self.raw_issue.raw["fields"][self.custom_fields["Rank"]]
 
@@ -218,10 +199,15 @@ class JiraIssue:
     def url(self) -> str:
         return self.raw_issue.permalink()
 
+    @property
+    def states(self) -> List[IssueState]:
+        return []
 
-class JiraEpic(JiraIssue, Epic):
-    def __init__(self: JiraEpic, jira_issue: Issue, jira: JiraServer):
-        super().__init__(jira_issue, jira.custom_fields)
+
+class JiraEpic(Epic):
+    def __init__(self: JiraEpic, raw_issue: AtlassianIssue, jira: JiraServer):
+        super().__init__(raw_issue.key, raw_issue.fields.summary)
+        self._raw_issue = raw_issue
         self._jira = jira
         self._issue_counts = None
 
@@ -231,6 +217,24 @@ class JiraEpic(JiraIssue, Epic):
             self._issue_counts = _load_issue_counts(self, self._jira)
 
         return self._issue_counts
+
+    @property
+    def epic_status(self) -> str:
+        return self._raw_issue.raw["fields"][self._jira.custom_fields["Epic Status"]]["value"]
+
+    @property
+    def epic_summary(self) -> str:
+        return self._raw_issue.raw["fields"][self._jira.custom_fields["Epic Status"]][
+            "summary"
+        ]
+
+    @property
+    def labels(self: JiraIssue) -> List[str]:
+        return self._raw_issue.fields.labels
+
+    @property
+    def url(self) -> str:
+        return self._raw_issue.permalink()
 
 
 IN_PROGRESS_STATES = ["In Progress", "In Review", "Awaiting Merge", "Under Test"]

@@ -36,12 +36,12 @@ class ResolvedReport:
 
 
 def update_issue_store(all_issues: List[JiraIssue], csv_file: str) -> None:
-    new_issues: Set[JiraIssue] = set()
+    new_issues: List[JiraIssue] = list()
     old_issue_keys: Set[str] = load_old_issues(csv_file)
 
     for issue in all_issues:
         if issue.key not in old_issue_keys:
-            new_issues.add(issue)
+            new_issues.append(issue)
 
     if new_issues:
         save_new_issues(csv_file, new_issues)

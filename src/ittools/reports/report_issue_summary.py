@@ -98,7 +98,7 @@ class IssueSummaryReport:
             report_issues, lambda issue: issue.epic_key
         ):
             epic: JiraEpic = self.jira.jira_epic(epic_key)
-            project_label = project_for(epic.raw_issue.fields.labels)
+            project_label = project_for(epic.labels)
             project = projects.get(project_label) or Project(project_label)
             projects[project_label] = project
             project.add_epic(epic, list(epic_issues))

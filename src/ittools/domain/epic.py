@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import abc
+from typing import List
 
-from .issue import Issue
+from .issue import Issue, IssueState
 from .issue_counts import IssueCounts
 
 
@@ -19,3 +20,7 @@ class Epic(Issue, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def issue_counts(self: Epic) -> IssueCounts:
         pass
+
+    @property
+    def states(self: Epic) -> List[IssueState]:
+        return []
