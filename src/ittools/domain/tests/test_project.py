@@ -23,7 +23,7 @@ class StubIssue(Issue):
         self._states = states
 
     @property
-    def states(self: StubIssue) -> List[IssueState]:
+    def history(self: StubIssue) -> List[IssueState]:
         return self._states
 
 

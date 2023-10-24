@@ -121,6 +121,7 @@ class JiraIssue(Issue):
         self.custom_fields = custom_fields
         self._duration = None
         self._calendar_duration = None
+        self._history = None
 
     def start_time(self) -> datetime:
         return self.in_progress_time() or self.created_time()
@@ -200,8 +201,17 @@ class JiraIssue(Issue):
         return self.raw_issue.permalink()
 
     @property
-    def states(self) -> List[IssueState]:
-        return []
+    def history(self) -> List[IssueState]:
+        if not self._history:
+            self._init_history()
+        return self._history
+
+    def _init_history(self: JiraIssue) -> None:
+        self._history = []
+        for history in self.raw_issue.changelog.histories:
+            for item in history.items:
+                if item.field == "status":
+                    self._history.append(IssueState(item.toString, dateutil.parser.isoparse(history.created)))
 
 
 class JiraEpic(Epic):

@@ -22,5 +22,5 @@ class Epic(Issue, metaclass=abc.ABCMeta):
         pass
 
     @property
-    def states(self: Epic) -> List[IssueState]:
+    def history(self: Epic) -> List[IssueState]:
         return []
