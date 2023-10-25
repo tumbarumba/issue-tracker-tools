@@ -69,6 +69,22 @@ class IssueDetailReport:
                         f"             {history.created} [{initials}]: {item.fromString} => {item.toString}"
                     )
 
+        print(" state times (business days):")
+        print(f"             Selected for Development: {issue.time_in_state('Selected for Development'):7.2f}")
+        print(f"             Ready for Development:    {issue.time_in_state('Ready for Development'):7.2f}")
+
+        in_progress_time = issue.time_in_state("In Progress")
+        in_review_time = issue.time_in_state("In Review")
+        under_test_time = issue.time_in_state("Under Test")
+        eng_cycle_time = in_progress_time + in_review_time + under_test_time
+
+        print("             -------------------------------------")
+        print(f"               In Progress:            {in_progress_time:7.2f}")
+        print(f"               In Review:              {in_review_time:7.2f}")
+        print(f"               Under Test:             {under_test_time:7.2f}")
+        print("             -------------------------------------")
+        print(f"             Engineering:              {eng_cycle_time:7.2f}")
+
         comments = self.jira.comments(issue.key)
         if comments:
             print(" comments:")
