@@ -27,6 +27,25 @@ def test_status_from_story_history():
     ]
 
 
+def test_time_in_status():
+    created     = mock_history_item("2023-10-12T09:00:00.000+1100", "A B", None, "Selected for Development")  # noqa
+    ready       = mock_history_item("2023-10-12T10:00:00.000+1100", "B C", "Selected for Development", "Ready for Development")  # noqa
+    in_progress = mock_history_item("2023-10-12T11:00:00.000+1100", "C D", "Ready for Development", "In Progress")  # noqa
+    in_review   = mock_history_item("2023-10-12T13:00:00.000+1100", "D E", "In Progress", "In Review")  # noqa
+    under_test  = mock_history_item("2023-10-12T16:00:00.000+1100", "E F", "In Review", "Under Test")  # noqa
+    done        = mock_history_item("2023-10-12T17:00:00.000+1100", "F G", "Under Test", "Done")  # noqa
+    raw_story = mock_story([created, ready, in_progress, in_review, under_test, done])
+
+    story = JiraIssue(raw_story, {})
+
+    assert story.time_in_state("Selected for Development") == 1.0 / 8.0     # 9am -> 10am
+    assert story.time_in_state("Ready for Development") == 1.0 / 8.0        # 10am -> 11am
+    assert story.time_in_state("In Progress") == 2.0 / 8.0                  # 11am -> 1pm
+    assert story.time_in_state("In Review") == 3.0 / 8.0                    # 1pm -> 4pm
+    assert story.time_in_state("Under Test") == 1.0 / 8.0                   # 4pm -> 5pm
+    assert story.time_in_state("Done") == 0.0
+
+
 def mock_history_item(time: str, author: str, old_state: str | None, new_state: str) -> object:
     status_item = Mock()
     status_item.field = "status"
