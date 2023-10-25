@@ -207,6 +207,7 @@ class JiraIssue(Issue):
 
     def _init_history(self: JiraIssue) -> None:
         self._history = []
+        self._history.append(IssueState("Selected for Development", self.created_time()))
         for history in self.raw_issue.changelog.histories:
             for item in history.items:
                 if item.field == "status":
