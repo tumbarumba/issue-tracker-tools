@@ -1,6 +1,6 @@
 import pytest
 import dateutil.parser
-from ittools.jira.jira_ext import _business_days
+from ittools.domain.dateutils import business_days
 
 
 @pytest.mark.parametrize(
@@ -53,4 +53,4 @@ from ittools.jira.jira_ext import _business_days
 def test_business_days(start, end, expected, message):
     start = dateutil.parser.isoparse(start)
     end = dateutil.parser.isoparse(end)
-    assert _business_days(start, end) == expected, message
+    assert business_days(start, end) == expected, message

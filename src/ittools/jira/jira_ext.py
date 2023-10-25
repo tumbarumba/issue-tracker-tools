@@ -6,14 +6,13 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 import dateutil.parser
-import numpy as np
-import pytz
 from dotenv import dotenv_values
 from jira import JIRA
 from jira import Issue as AtlassianIssue
 from jira.client import ResultList
 
 from ittools.config import JiraConfig
+from ittools.domain.dateutils import business_days, calendar_days
 from ittools.domain.epic import Epic
 from ittools.domain.issue import Issue, IssueState
 from ittools.domain.issue_counts import IssueCounts
@@ -185,8 +184,8 @@ class JiraIssue(Issue):
 
     def _init_durations(self: JiraIssue) -> None:
         duration_end = self.completed_time() or datetime.now()
-        self._duration = _business_days(self.start_time(), duration_end)
-        self._calendar_duration = _calendar_days(self.start_time(), duration_end)
+        self._duration = business_days(self.start_time(), duration_end)
+        self._calendar_duration = calendar_days(self.start_time(), duration_end)
 
     @property
     def epic_key(self) -> str:
@@ -288,50 +287,6 @@ def _filter_by_state(
     issues: List[JiraIssue], states_to_check: List[str]
 ) -> List[JiraIssue]:
     return list(filter(lambda issue: issue.status in states_to_check, issues))
-
-
-BUSINESS_HOURS_START = 9
-BUSINESS_HOURS_END = 17
-
-
-def _business_days(start_time: datetime, end_time: datetime) -> float | None:
-    if not (start_time and end_time):
-        return None
-    bus_days = np.busday_count(start_time.date(), end_time.date())
-    bus_hours = _hours_in_working_day(start_time, end_time)
-    return bus_days + (bus_hours / 8)
-
-
-def _hours_in_working_day(start_time: datetime, end_time: datetime) -> float:
-    bus_hours = _end_hours(end_time) - _start_hours(start_time)
-    if bus_hours < -8:
-        bus_hours = (bus_hours + 24) * -1
-    if bus_hours > 8:
-        bus_hours = 8
-    return bus_hours
-
-
-def _start_hours(start_time) -> float:
-    start_hours = start_time.hour + start_time.minute / 60
-    return min(start_hours, BUSINESS_HOURS_END)
-
-
-def _end_hours(end_time) -> float:
-    end_hours = end_time.hour + end_time.minute / 60
-    return max(end_hours, BUSINESS_HOURS_START)
-
-
-def _calendar_days(start_time, end_time) -> float | None:
-    if not (start_time and end_time):
-        return None
-    return (
-        (
-            end_time.astimezone(pytz.UTC) - start_time.astimezone(pytz.UTC)
-        ).total_seconds()
-        / 60
-        / 60
-        / 24
-    )
 
 
 def _load_jira_token() -> str:

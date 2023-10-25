@@ -5,6 +5,8 @@ import numpy as np
 from datetime import datetime
 from typing import Any, List
 
+from .dateutils import business_days
+
 
 class IssueState:
     """The state of an issue"""
@@ -46,37 +48,6 @@ class Issue(metaclass=abc.ABCMeta):
 
 def _durations_for(states: List[IssueState]):
     start_times = [state.start_time for state in states]
-    durations = [_business_days(t1, t2) for t1, t2 in zip(start_times[:-1], start_times[1:])]
+    durations = [business_days(t1, t2) for t1, t2 in zip(start_times[:-1], start_times[1:])]
     durations.append(np.float64(0.0))  # Assume last state has zero time
     return durations
-
-
-BUSINESS_HOURS_START = 9
-BUSINESS_HOURS_END = 17
-
-
-def _business_days(start_time: datetime, end_time: datetime) -> float | None:
-    if not (start_time and end_time):
-        return None
-    bus_days = np.busday_count(start_time.date(), end_time.date())
-    bus_hours = _hours_in_working_day(start_time, end_time)
-    return bus_days + (bus_hours / 8)
-
-
-def _hours_in_working_day(start_time: datetime, end_time: datetime) -> float:
-    bus_hours = _end_hours(end_time) - _start_hours(start_time)
-    if bus_hours < -8:
-        bus_hours = (bus_hours + 24) * -1
-    if bus_hours > 8:
-        bus_hours = 8
-    return bus_hours
-
-
-def _start_hours(start_time) -> float:
-    start_hours = start_time.hour + start_time.minute / 60
-    return min(start_hours, BUSINESS_HOURS_END)
-
-
-def _end_hours(end_time) -> float:
-    end_hours = end_time.hour + end_time.minute / 60
-    return max(end_hours, BUSINESS_HOURS_START)
