@@ -30,11 +30,17 @@ class Project:
     def __init__(self: Project, label: str):
         self.label = label
         self.epics: Dict[str, EpicIssues] = {}
-        self.durations: List[float] = []
 
     def add_epic(self: Project, epic: JiraEpic, issues: List[JiraIssue]) -> None:
         self.epics[epic.key] = EpicIssues(epic, issues)
-        self.durations.extend(list(map(lambda issue: issue.duration, issues)))
+
+    @property
+    def issues(self: Project) -> List[JiraIssue]:
+        return [issue for epic_issues in self.epics.values() for issue in epic_issues.issues]
+
+    @property
+    def issue_durations(self: Project) -> List[float]:
+        return [issue.duration for issue in self.issues]
 
 
 class IssueSummaryReport:
@@ -65,14 +71,14 @@ class IssueSummaryReport:
             self.report_project(projects[project_label])
 
         if self.show_stats:
-            all_durations = self.collect_durations(projects)
+            all_durations = [issue.duration for issue in report_issues]
             self.print_heading_l1("All Projects")
-            print_statistics("all issues", all_durations)
+            print_statistics("all issues", report_issues)
             print("")
             print(" Projects by issue counts:")
             total_count = len(all_durations)
             for project_label in sorted(projects):
-                project_count = len(projects[project_label].durations)
+                project_count = len(projects[project_label].issues)
                 print(
                     f" {project_count:3} ({project_count / total_count * 100:3.0f}%): {project_label}"
                 )
@@ -82,7 +88,7 @@ class IssueSummaryReport:
             print(" Projects by issue durations:")
             total_duration = sum(all_durations)
             for project_label in sorted(projects):
-                project_duration = sum(projects[project_label].durations)
+                project_duration = sum(projects[project_label].issue_durations)
                 print(
                     f" {project_duration:5.1f} ({project_duration / total_duration * 100:3.0f}%): {project_label}"
                 )
@@ -105,16 +111,6 @@ class IssueSummaryReport:
 
         return projects
 
-    def collect_durations(
-        self: IssueSummaryReport, projects: Dict[str, Project]
-    ) -> List[float]:
-        all_durations: List[float] = []
-        for project_label in sorted(projects):
-            project = projects[project_label]
-            all_durations.extend(project.durations)
-
-        return all_durations
-
     def report_project(self: IssueSummaryReport, project: Project) -> None:
         self.print_heading_l1(f"Project: {project.label}")
 
@@ -129,7 +125,7 @@ class IssueSummaryReport:
             print()
 
         if self.show_stats:
-            print_statistics(f"project {project.label}", project.durations)
+            print_statistics(f"project {project.label}", project.issues)
             print()
 
     def print_heading_l1(self: IssueSummaryReport, heading: str) -> None:
@@ -161,7 +157,8 @@ class IssueSummaryReport:
             print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary}")
 
 
-def print_statistics(title: str, durations: List[float]) -> None:
+def print_statistics(title: str, issues: List[JiraIssue]) -> None:
+    durations = [issue.duration for issue in issues]
     print(f"Statistics: {title}")
     print(f" issue count:    : {len(durations):2}")
     print(f" lead time total : {sum(durations):5.2f}")
