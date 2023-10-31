@@ -104,7 +104,7 @@ class IssueSummaryReport:
             report_issues, lambda issue: issue.epic_key
         ):
             epic: JiraEpic = self.jira.jira_epic(epic_key)
-            project_label = project_for(epic.labels)
+            project_label = _project_for(epic.labels)
             project = projects.get(project_label) or Project(project_label)
             projects[project_label] = project
             project.add_epic(epic, list(epic_issues))
@@ -164,14 +164,29 @@ def print_statistics(title: str, issues: List[JiraIssue]) -> None:
     print(f" lead time total : {sum(durations):5.2f}")
     print(f" lead time mean  : {mean(durations):5.2f}")
     print(f" lead time median: {median(durations):5.2f}")
+    print("")
+    print("Cycle time breakdown (calendar days):")
+    in_progress_time = _total_time_in_state(issues, "In Progress")
+    in_review_time = _total_time_in_state(issues, "In Review")
+    under_test_time = _total_time_in_state(issues, "Under Test")
+    total_time = in_progress_time + in_review_time + under_test_time
+    print(f" in progress: {in_progress_time:7.2f}")
+    print(f" in review  : {in_review_time:7.2f}")
+    print(f" under test : {under_test_time:7.2f}")
+    print(" --------------------")
+    print(f" total      : {total_time:7.2f}")
 
 
-def project_for(labels: List[str]) -> str:
+def _total_time_in_state(issues: List[JiraIssue], state_name: str) -> float:
+    return sum(issue.time_in_state(state_name) for issue in issues)
+
+
+def _project_for(labels: List[str]) -> str:
     for label in labels:
-        if is_project(label):
+        if _is_project(label):
             return label.split("_")[0]
     return "Unplanned"
 
 
-def is_project(label: str) -> bool:
+def _is_project(label: str) -> bool:
     return "Team" not in label
