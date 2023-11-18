@@ -11,7 +11,15 @@ These tools are described in more detail below.
 
 ## Installation
 
-Setup your Python environment (a virtualenv is preferred).
+Setup your Python environment (a virtualenv is preferred). For example, the standard `venv`
+module can be set up like this:
+
+```commandline
+# Create a new virtual environment under the `.venv` directory
+python -m venv .venv
+# Activate the virtual environment for the current shell
+. .venv/bin/activate
+```
 
 `cd` to the base directory of the cloned repository, and run the command:
 
