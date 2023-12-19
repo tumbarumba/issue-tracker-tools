@@ -84,16 +84,6 @@ class IssueSummaryReport:
                 )
             print(" --------------------")
             print(f" {total_count:3} (100%): Total")
-            print("")
-            print(" Projects by issue durations:")
-            total_duration = sum(all_durations)
-            for project_label in sorted(projects):
-                project_duration = sum(projects[project_label].issue_durations)
-                print(
-                    f" {project_duration:5.1f} ({project_duration / total_duration * 100:3.0f}%): {project_label}"
-                )
-            print(" --------------------")
-            print(f" {total_duration:5.1f} (100%): Total")
 
     def build_projects(
         self: IssueSummaryReport, report_issues: List[JiraIssue]

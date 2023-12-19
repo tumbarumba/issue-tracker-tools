@@ -27,7 +27,7 @@ class ResolvedReport:
     ) -> None:
         from_date = user_from_date or jira_from_date_days_ago(days)
         to_date = user_to_date or jira_to_date()
-        print(f"Resolved issues after {from_date} and before {to_date}\n")
+        print(f"Resolved issues from {from_date} and before {to_date}\n")
         report_issues = self.jira.query_resolved_issues(from_date, to_date)
 
         update_issue_store(report_issues, csv_file)
