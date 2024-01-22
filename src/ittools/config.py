@@ -6,15 +6,15 @@ import yaml
 
 REPORT_DIR_DEFAULT = "~/jirareports"
 DEFAULT_STATUSES = [
-    {"display": "🔵", "name": "Backlog"},
-    {"display": "🌑", "name": "Selected for Development"},
-    {"display": "🌘", "name": "Ready for Development"},
-    {"display": "🌗", "name": "In Progress"},
+    {"display": "B", "name": "Backlog"},
+    {"display": "🔵", "name": "Selected for Development"},
+    {"display": "🌑", "name": "Ready for Development"},
+    {"display": "🌘", "name": "In Progress"},
     {"display": "🌗", "name": "In Review"},
-    {"display": "🌖", "name": "Awaiting Merge"},
+    {"display": "🌗", "name": "Awaiting Merge"},
     {"display": "🌖", "name": "Under Test"},
     {"display": "🌕", "name": "Awaiting Demo"},
-    {"display": "✅", "name": "Done"},
+    {"display": "🌕", "name": "Done"},
     {"display": "C", "name": "Closed"},
     {"display": "D", "name": "Duplicate"},
 ]
