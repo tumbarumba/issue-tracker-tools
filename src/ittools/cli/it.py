@@ -209,9 +209,16 @@ def release(
     type=click.DateTime(formats=["%Y-%m-%d"]),
     help="include issues resolved before this date",
 )
+@click.option(
+    "-l",
+    "--label",
+    "label",
+    type=click.STRING,
+    help="filter issues to epics with this label"
+)
 @click.pass_context
 def resolved(
-    ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime
+    ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime, label: str
 ) -> None:
     """Report on recently closed issues."""
     options: ReportOptions = ctx.obj
@@ -223,7 +230,7 @@ def resolved(
     if to_date:
         to_date = to_date.date()
 
-    ResolvedReport(options, server).run(days, from_date, to_date, csv_file)
+    ResolvedReport(options, server).run(days, from_date, to_date, label, csv_file)
 
 
 @issue_tracker.command()

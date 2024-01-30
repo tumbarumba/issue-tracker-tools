@@ -23,16 +23,32 @@ class ResolvedReport:
         days: int,
         user_from_date: str,
         user_to_date: str,
+        epic_label: str,
         csv_file: str,
     ) -> None:
         from_date = user_from_date or jira_from_date_days_ago(days)
         to_date = user_to_date or jira_to_date()
         print(f"Resolved issues from {from_date} and before {to_date}\n")
-        report_issues = self.jira.query_resolved_issues(from_date, to_date)
+        resolved_issues = self.jira.query_resolved_issues(from_date, to_date)
+        report_issues = self.filter_issues(resolved_issues, epic_label)
 
         update_issue_store(report_issues, csv_file)
 
         IssueSummaryReport(self.opts, self.jira, True, False).run(report_issues)
+
+    def filter_issues(self: ResolvedReport, resolved_issues: List[JiraIssue], epic_label: str) -> List[JiraIssue]:
+        if not epic_label:
+            return resolved_issues
+
+        matching_epic_keys = self.find_epics_with_label(resolved_issues, epic_label)
+        filtered_issues = [issue for issue in resolved_issues if issue.epic_key in matching_epic_keys]
+        return filtered_issues
+
+    def find_epics_with_label(self, resolved_issues: List[JiraIssue], epic_label: str):
+        all_epic_keys = {issue.epic_key for issue in resolved_issues}
+        epics = [self.jira.jira_epic(key) for key in all_epic_keys]
+        matching_epic_keys = [epic.key for epic in epics if epic_label in epic.labels]
+        return matching_epic_keys
 
 
 def update_issue_store(all_issues: List[JiraIssue], csv_file: str) -> None:
