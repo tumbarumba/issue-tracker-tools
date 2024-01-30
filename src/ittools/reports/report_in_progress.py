@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from itertools import groupby
 from typing import Dict, List
 
@@ -21,8 +22,10 @@ class InProgressReport:
         }
 
     def run(self: InProgressReport, group_by_epic: bool, group_by_team: bool) -> None:
+        print("In progress report")
+        print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         report_issues = self.jira.query_working_issues()
-        print(f"In progress issue count: {len(report_issues)}\n")
+        print(f"  issue count: {len(report_issues)}\n")
 
         if group_by_epic:
             self.report_issues_grouped_by_epic(report_issues)
