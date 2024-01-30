@@ -150,10 +150,10 @@ class IssueSummaryReport:
 def print_statistics(title: str, issues: List[JiraIssue]) -> None:
     durations = [issue.duration for issue in issues]
     print(f"Statistics: {title}")
-    print(f" issue count:    : {len(durations):2}")
-    print(f" lead time total : {sum(durations):5.2f}")
-    print(f" lead time mean  : {mean(durations):5.2f}")
-    print(f" lead time median: {median(durations):5.2f}")
+    print(f" issue count:     : {len(durations):2}")
+    print(f" cycle time total : {sum(durations):5.2f}")
+    print(f" cycle time mean  : {mean(durations):5.2f}")
+    print(f" cycle time median: {median(durations):5.2f}")
     print("")
     print("Cycle time breakdown (calendar days):")
     in_progress_time = _total_time_in_state(issues, "In Progress")
