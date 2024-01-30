@@ -160,11 +160,11 @@ def print_statistics(title: str, issues: List[JiraIssue]) -> None:
     in_review_time = _total_time_in_state(issues, "In Review")
     under_test_time = _total_time_in_state(issues, "Under Test")
     total_time = in_progress_time + in_review_time + under_test_time
-    print(f" in progress: {in_progress_time:7.2f}")
-    print(f" in review  : {in_review_time:7.2f}")
-    print(f" under test : {under_test_time:7.2f}")
-    print(" --------------------")
-    print(f" total      : {total_time:7.2f}")
+    print(f" in progress: {in_progress_time:7.2f} ({in_progress_time / total_time * 100:3.0f}%)")
+    print(f" in review  : {in_review_time:7.2f} ({in_review_time / total_time * 100:3.0f}%)")
+    print(f" under test : {under_test_time:7.2f} ({under_test_time / total_time * 100:3.0f}%)")
+    print(" ---------------------------")
+    print(f" total      : {total_time:7.2f} (100%)")
 
 
 def _total_time_in_state(issues: List[JiraIssue], state_name: str) -> float:

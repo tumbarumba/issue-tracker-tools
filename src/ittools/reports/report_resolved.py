@@ -28,7 +28,10 @@ class ResolvedReport:
     ) -> None:
         from_date = user_from_date or jira_from_date_days_ago(days)
         to_date = user_to_date or jira_to_date()
-        print(f"Resolved issues from {from_date} and before {to_date}\n")
+        print(f"Issues resolved from {from_date} (inclusive) to {to_date} (exclusive)")
+        if epic_label:
+            print(f"(including only issues in epics labelled with '{epic_label}')")
+        print("")
         resolved_issues = self.jira.query_resolved_issues(from_date, to_date)
         report_issues = self.filter_issues(resolved_issues, epic_label)
 
