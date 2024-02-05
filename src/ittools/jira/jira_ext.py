@@ -162,7 +162,7 @@ class JiraIssue(Issue):
         return list(map(lambda version: version["name"], versions))
 
     def add_fix_version(self, new_fix_version) -> None:
-        self.raw_issue.add_field_value("fixVersions", str({"name": new_fix_version}))
+        self.raw_issue.update(update={"fixVersions": [{"add": {"name": new_fix_version}}]})
 
     @property
     def status(self) -> str:
