@@ -13,14 +13,14 @@ class Epic(Issue, metaclass=abc.ABCMeta):
     An epic can be split up into smaller Issues.
     """
 
-    def __init__(self: Epic, key: str, summary: str):
+    def __init__(self, key: str, summary: str):
         super().__init__(key, summary)
 
     @property
     @abc.abstractmethod
-    def issue_counts(self: Epic) -> IssueCounts:
+    def issue_counts(self) -> IssueCounts:
         pass
 
     @property
-    def history(self: Epic) -> List[IssueState]:
+    def history(self) -> List[IssueState]:
         return []

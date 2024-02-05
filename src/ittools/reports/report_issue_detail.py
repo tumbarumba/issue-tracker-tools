@@ -9,11 +9,11 @@ from ittools.jira.jira_ext import JiraServer, JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self: IssueDetailReport, jira: JiraServer, verbose: bool):
+    def __init__(self, jira: JiraServer, verbose: bool):
         self.jira = jira
         self.verbose: bool = verbose
 
-    def run(self: IssueDetailReport, issue_keys: List[str]) -> None:
+    def run(self, issue_keys: List[str]) -> None:
         try:
             for issue in self.jira.query_issue_keys(issue_keys):
                 self.report_issue_detail(issue)
@@ -21,7 +21,7 @@ class IssueDetailReport:
         except Exception as e:
             print(f"Failed: {e}")
 
-    def report_issue_detail(self: IssueDetailReport, issue: JiraIssue):  # noqa: C901
+    def report_issue_detail(self, issue: JiraIssue):  # noqa: C901
         if self.verbose:
             print(" json dump:")
             serialised = jsonpickle.encode(issue.raw_issue)

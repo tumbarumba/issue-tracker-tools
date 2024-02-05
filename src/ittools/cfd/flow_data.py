@@ -13,7 +13,7 @@ class FlowData:
     TREND_PERIOD: int = 14
     MINIMUM_TREND_SLOPE = 0.001
 
-    def __init__(self: FlowData, data_frame: pandas.DataFrame, today: datetime.date):
+    def __init__(self, data_frame: pandas.DataFrame, today: datetime.date):
         self.today = today
         self.dates = self._load_dates(data_frame, today)
         self.pending = data_frame["pending"].tolist()[: len(self.dates)]
@@ -63,20 +63,20 @@ class FlowData:
             pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope)
         )
 
-    def _calculate_implied_y_intercept(self: FlowData, slope: float):
+    def _calculate_implied_y_intercept(self, slope: float):
         """Force the calculated value of today's done to match the actual value by adjusting the intercept"""
         index_today = (self.today - self.dates[0]).days
         done_today = self.done[index_today]
         return done_today - (index_today * slope)
 
-    def _predicted_end_index(self: FlowData, trend: Trend) -> int | None:
+    def _predicted_end_index(self, trend: Trend) -> int | None:
         if trend.slope < FlowData.MINIMUM_TREND_SLOPE:
             return None
 
         final_scope = self.total[-1]
         return ceil((final_scope - trend.intercept) / trend.slope)
 
-    def _predicted_end_date(self: FlowData, trend: Trend) -> datetime.date:
+    def _predicted_end_date(self, trend: Trend) -> datetime.date:
         end_index = self._predicted_end_index(trend)
         if not end_index:
             return None
@@ -85,22 +85,22 @@ class FlowData:
         return start_date + timedelta(days=self._predicted_end_index(trend))
 
     @property
-    def optimistic_completion_date(self: FlowData) -> datetime.date:
+    def optimistic_completion_date(self) -> datetime.date:
         return self._predicted_end_date(self.optimistic_trend)
 
     @property
-    def pessimistic_completion_date(self: FlowData) -> datetime.date:
+    def pessimistic_completion_date(self) -> datetime.date:
         return self._predicted_end_date(self.pessimistic_trend)
 
 
 class Trend:
     """Regression coefficients for a linear trend line"""
 
-    def __init__(self: Trend, slope: float, intercept: float):
+    def __init__(self, slope: float, intercept: float):
         self.slope = slope
         self.intercept = intercept
 
-    def __str__(self: Trend) -> str:
+    def __str__(self) -> str:
         return f"Trend({self.slope:n},{self.intercept:n})"
 
 

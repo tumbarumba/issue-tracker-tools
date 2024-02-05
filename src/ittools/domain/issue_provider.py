@@ -10,5 +10,5 @@ class IssueProvider(metaclass=abc.ABCMeta):
     """A service that can load issues from an external service or database"""
 
     @abc.abstractmethod
-    def load_project_epics(self: IssueProvider, project_key: str) -> List[Epic]:
+    def load_project_epics(self, project_key: str) -> List[Epic]:
         pass

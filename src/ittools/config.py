@@ -26,7 +26,7 @@ DEFAULT_ISSUE_TYPES = [
 
 
 class IssueTrackerConfig:
-    def __init__(self: IssueTrackerConfig, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]):
         self.provider = config.get("provider", "jira")
         self.report_dir = os.path.expanduser(
             config.get("report_dir", REPORT_DIR_DEFAULT)
@@ -44,7 +44,7 @@ def build_projects(project_configs: List[Dict[str, Any]]):
 
 
 class JiraConfig:
-    def __init__(self: JiraConfig, jira_config: Dict[str, Any]):
+    def __init__(self, jira_config: Dict[str, Any]):
         self.url: str = jira_config["url"]
         self.statuses: Dict[str, Dict[str, str]] = jira_config.get(
             "statuses", DEFAULT_STATUSES
@@ -55,7 +55,7 @@ class JiraConfig:
 
 
 class ProjectConfig:
-    def __init__(self: ProjectConfig, project_config: Dict[str, Any]):
+    def __init__(self, project_config: Dict[str, Any]):
         self.name: str = project_config.get("name", "Unnamed Project")
         self.key: str = project_config.get("key", "(none)")
         self.milestones: List[Dict[str, Any]] = project_config.get("milestones", [])
@@ -63,7 +63,7 @@ class ProjectConfig:
 
 class ReportOptions(object):
     def __init__(
-        self: ReportOptions,
+        self,
         issue_tracker_config: IssueTrackerConfig,
         verbose: bool = False,
     ):

@@ -13,12 +13,12 @@ DEFAULT_COLUMN_WIDTHS = list(
 
 
 class ProjectReport:
-    def __init__(self: ProjectReport, project: Project):
+    def __init__(self, project: Project):
         self.project = project
         self.col_widths = calculate_column_widths(project.epics)
         self.row_separator = sum(self.col_widths) * "="
 
-    def run(self: ProjectReport, report_date: str) -> None:
+    def run(self, report_date: str) -> None:
         print(f"Project: {self.project.key}")
         print(f"Date: {report_date}")
         print()
@@ -31,7 +31,7 @@ class ProjectReport:
         print(self.format_row(total_row_values(self.project)))
         print()
 
-    def format_row(self: ProjectReport, values: List[Any]) -> str:
+    def format_row(self, values: List[Any]) -> str:
         return (
             f"{values[0]:<{self.col_widths[0]}}"  # Key
             f"{values[1]:<{self.col_widths[1]}}"  # Summary
