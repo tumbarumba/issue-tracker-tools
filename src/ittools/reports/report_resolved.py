@@ -14,12 +14,12 @@ this.date_source = datetime.date
 
 
 class ResolvedReport:
-    def __init__(self: ResolvedReport, opts: ReportOptions, jira: JiraServer):
+    def __init__(self, opts: ReportOptions, jira: JiraServer):
         self.opts = opts
         self.jira = jira
 
     def run(
-        self: ResolvedReport,
+        self,
         days: int,
         user_from_date: str,
         user_to_date: str,
@@ -39,7 +39,7 @@ class ResolvedReport:
 
         IssueSummaryReport(self.opts, self.jira, True, False).run(report_issues)
 
-    def filter_issues(self: ResolvedReport, resolved_issues: List[JiraIssue], epic_label: str) -> List[JiraIssue]:
+    def filter_issues(self, resolved_issues: List[JiraIssue], epic_label: str) -> List[JiraIssue]:
         if not epic_label:
             return resolved_issues
 

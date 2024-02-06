@@ -10,30 +10,30 @@ from ittools.domain.project import Project
 
 
 class StubIssueProvider(IssueProvider):
-    def __init__(self: StubIssueProvider, epics: List[Epic]):
+    def __init__(self, epics: List[Epic]):
         self.epics = epics
 
-    def load_project_epics(self: StubIssueProvider, project_key: str) -> List[Epic]:
+    def load_project_epics(self, project_key: str) -> List[Epic]:
         return self.epics
 
 
 class StubIssue(Issue):
-    def __init__(self: StubIssue, key: str, summary: str, states: List[IssueState]):
+    def __init__(self, key: str, summary: str, states: List[IssueState]):
         super().__init__(key, summary)
         self._states = states
 
     @property
-    def history(self: StubIssue) -> List[IssueState]:
+    def history(self) -> List[IssueState]:
         return self._states
 
 
 class StubEpic(StubIssue, Epic):
-    def __init__(self: StubEpic, key: str, summary: str, issues: List[Issue]):
+    def __init__(self, key: str, summary: str, issues: List[Issue]):
         super().__init__(key, summary, [])
         self.issues = issues
 
     @property
-    def issue_counts(self: Epic) -> IssueCounts:
+    def issue_counts(self) -> IssueCounts:
         return IssueCounts.zero()
 
 

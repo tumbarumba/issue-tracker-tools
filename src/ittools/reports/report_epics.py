@@ -6,7 +6,7 @@ from ittools.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
 
 
 class EpicReport:
-    def __init__(self: EpicReport, opts: ReportOptions, jira: JiraServer):
+    def __init__(self, opts: ReportOptions, jira: JiraServer):
         self.verbose: bool = opts.verbose
         statuses: Dict[str, Dict[str, str]] = opts.jira_config.statuses
         self.status_order: Dict[str, int] = {
@@ -17,7 +17,7 @@ class EpicReport:
         }
         self.jira = jira
 
-    def run(self: EpicReport, epics: List[JiraEpic]) -> None:
+    def run(self, epics: List[JiraEpic]) -> None:
         for epic in epics:
             print("{}: {}".format(epic.key, epic.summary))
             issues: List[JiraIssue] = self.jira.query_issues_in_epic(epic.key)

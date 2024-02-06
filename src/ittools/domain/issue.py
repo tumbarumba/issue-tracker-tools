@@ -11,38 +11,38 @@ from .dateutils import business_days
 class IssueState:
     """The state of an issue"""
 
-    def __init__(self: IssueState, state: str, start_time: datetime):
+    def __init__(self, state: str, start_time: datetime):
         self.name = state
         self.start_time = start_time
 
-    def __eq__(self: IssueState, other: Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return self.name == other.name and self.start_time == other.start_time
 
-    def __repr__(self: IssueState) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name})"
 
 
 class Issue(metaclass=abc.ABCMeta):
     """An Issue represents a unit of work"""
 
-    def __init__(self: Issue, key: str, summary: str):
+    def __init__(self, key: str, summary: str):
         self.key = key
         self.summary = summary
 
-    def __eq__(self: Issue, other: Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return self.key == other.key
 
-    def __repr__(self: Issue) -> str:
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.key})"
 
-    def time_in_state(self: Issue, state_name: str) -> float:
+    def time_in_state(self, state_name: str) -> float:
         durations = _durations_for(self.history)
         matching_durations = [duration for state, duration in zip(self.history, durations) if state.name == state_name]
         return sum(matching_durations)
 
     @property
     @abc.abstractmethod
-    def history(self: Issue) -> List[IssueState]:
+    def history(self) -> List[IssueState]:
         pass
 
 

@@ -20,7 +20,7 @@ from ittools.domain.issue_provider import IssueProvider
 
 
 class JiraServer(IssueProvider, JIRA):
-    def __init__(self: JiraServer, verbose: bool, jira_config: JiraConfig):
+    def __init__(self, verbose: bool, jira_config: JiraConfig):
         super().__init__(
             token_auth=_load_jira_token(), options={"server": jira_config.url}
         )
@@ -28,14 +28,14 @@ class JiraServer(IssueProvider, JIRA):
         self._config = jira_config
         self._custom_fields = self._find_custom_fields()
 
-    def load_project_epics(self: JiraServer, project_key: str) -> List[Epic]:
+    def load_project_epics(self, project_key: str) -> List[JiraEpic]:
         return self.query_project_epics(project_key)
 
     @property
     def custom_fields(self) -> Dict[str, str]:
         return self._custom_fields
 
-    def _find_custom_fields(self: JiraServer) -> Dict[str, str]:
+    def _find_custom_fields(self) -> Dict[str, str]:
         all_fields = self.fields()
         return {
             "Epic Link": self._find_custom_field(all_fields, "Epic Link"),
@@ -44,56 +44,58 @@ class JiraServer(IssueProvider, JIRA):
         }
 
     def _find_custom_field(
-        self: JiraServer, all_fields: List[Dict[str, Any]], name: str
+        self, all_fields: List[Dict[str, Any]], name: str
     ) -> str:
         field = next(filter(lambda f: f["name"] == name, all_fields))
         if self._verbose:
             print(f"Field '{name}' has id '{field['id']}' on this server")
         return field["id"]
 
-    def _create_issue(self: JiraServer, raw_issue: AtlassianIssue):
+    def _create_issue(self, raw_issue: AtlassianIssue):
         return JiraIssue(raw_issue, self._custom_fields)
 
-    def _create_epic(self: JiraServer, raw_issue: AtlassianIssue):
+    def _create_epic(self, raw_issue: AtlassianIssue):
         return JiraEpic(raw_issue, self)
 
-    def query_jql_raw(self: JiraServer, jql: str) -> ResultList[AtlassianIssue]:
+    def query_jql_raw(self, jql: str) -> ResultList[AtlassianIssue]:
         if self._verbose:
             print(f"running jql: {jql}")
-        return self.search_issues(jql, expand="changelog", maxResults=1000)
+        result = self.search_issues(jql, expand="changelog", maxResults=1000)
+        assert isinstance(result, ResultList)
+        return result
 
-    def query_jql_issues(self: JiraServer, jql: str) -> List[JiraIssue]:
+    def query_jql_issues(self, jql: str) -> List[JiraIssue]:
         return list(map(self._create_issue, self.query_jql_raw(jql)))
 
-    def query_jql_epics(self: JiraServer, jql: str) -> List[JiraEpic]:
+    def query_jql_epics(self, jql: str) -> List[JiraEpic]:
         return list(map(self._create_epic, self.query_jql_raw(jql)))
 
-    def query_project_epics(self: JiraServer, project_label: str) -> List[JiraEpic]:
+    def query_project_epics(self, project_label: str) -> List[JiraEpic]:
         return self.query_jql_epics(
             f"project = DS AND issuetype = Epic and labels = {project_label} ORDER BY rank"
         )
 
-    def query_open_epics(self: JiraServer) -> List[JiraEpic]:
+    def query_open_epics(self) -> List[JiraEpic]:
         return self.query_jql_epics(
             "project = DS and issueType = Epic and 'Epic Status' != Done order by rank"
         )
 
-    def query_fix_version(self: JiraServer, fix_version: str) -> List[JiraIssue]:
+    def query_fix_version(self, fix_version: str) -> List[JiraIssue]:
         return self.query_jql_issues(f"project = DS AND fixVersion = {fix_version}")
 
-    def query_issue_keys(self: JiraServer, issue_keys: List[str]) -> List[JiraIssue]:
+    def query_issue_keys(self, issue_keys: List[str]) -> List[JiraIssue]:
         return self.query_jql_issues(f"key in ({', '.join(issue_keys)})")
 
-    def jira_issue(self: JiraServer, issue_key: str) -> JiraIssue:
+    def jira_issue(self, issue_key: str) -> JiraIssue:
         issue = self.issue(issue_key, expand="changelog")
         return JiraIssue(issue, self._custom_fields)
 
-    def jira_epic(self: JiraServer, epic_key: str) -> JiraEpic:
+    def jira_epic(self, epic_key: str) -> JiraEpic:
         issue = self.issue(epic_key, expand="changelog")
         return JiraEpic(issue, self)
 
     def query_resolved_issues(
-        self: JiraServer, from_date: str, to_date: str
+        self, from_date: str, to_date: str
     ) -> List[JiraIssue]:
         jql = (
             f"project = DS and 'Epic Link' is not null and \
@@ -103,10 +105,10 @@ class JiraServer(IssueProvider, JIRA):
         )
         return self.query_jql_issues(jql)
 
-    def query_issues_in_epic(self: JiraServer, epic_key: str) -> List[JiraIssue]:
+    def query_issues_in_epic(self, epic_key: str) -> List[JiraIssue]:
         return self.query_jql_issues(f"'Epic Link' = {epic_key} order by Status")
 
-    def query_working_issues(self: JiraServer) -> List[JiraIssue]:
+    def query_working_issues(self) -> List[JiraIssue]:
         jql = "project = DS and issuetype in ('Story', 'Task', 'Bug') and \
                status in ('In Progress', 'In Review', 'Awaiting Merge', 'Under Test') \
                ORDER BY created ASC"
@@ -114,7 +116,7 @@ class JiraServer(IssueProvider, JIRA):
 
 
 class JiraIssue(Issue):
-    def __init__(self: JiraIssue, raw_issue: AtlassianIssue, custom_fields: Dict[str, str]):
+    def __init__(self, raw_issue: AtlassianIssue, custom_fields: Dict[str, str]):
         super().__init__(raw_issue.key, raw_issue.fields.summary)
         self.raw_issue = raw_issue
         self.custom_fields = custom_fields
@@ -160,29 +162,29 @@ class JiraIssue(Issue):
         return list(map(lambda version: version["name"], versions))
 
     def add_fix_version(self, new_fix_version) -> None:
-        self.raw_issue.add_field_value("fixVersions", {"name": new_fix_version})
+        self.raw_issue.update(update={"fixVersions": [{"add": {"name": new_fix_version}}]})
 
     @property
-    def status(self: JiraIssue) -> str:
+    def status(self) -> str:
         return self.raw_issue.fields.status.name
 
     @property
-    def issue_type(self: JiraIssue) -> str:
+    def issue_type(self) -> str:
         return self.raw_issue.fields.issuetype.name
 
     @property
-    def duration(self: JiraIssue) -> float | None:
+    def duration(self) -> float | None:
         if not self._duration:
             self._init_durations()
         return self._duration
 
     @property
-    def calendar_duration(self: JiraIssue) -> float | None:
+    def calendar_duration(self) -> float | None:
         if not self._calendar_duration:
             self._init_durations()
         return self._calendar_duration
 
-    def _init_durations(self: JiraIssue) -> None:
+    def _init_durations(self) -> None:
         duration_end = self.completed_time() or datetime.now()
         self._duration = business_days(self.start_time(), duration_end)
         self._calendar_duration = calendar_days(self.start_time(), duration_end)
@@ -205,7 +207,7 @@ class JiraIssue(Issue):
             self._init_history()
         return self._history
 
-    def _init_history(self: JiraIssue) -> None:
+    def _init_history(self) -> None:
         self._history = []
         self._history.append(IssueState("Selected for Development", self.created_time()))
         for history in self.raw_issue.changelog.histories:
@@ -215,14 +217,14 @@ class JiraIssue(Issue):
 
 
 class JiraEpic(Epic):
-    def __init__(self: JiraEpic, raw_issue: AtlassianIssue, jira: JiraServer):
+    def __init__(self, raw_issue: AtlassianIssue, jira: JiraServer):
         super().__init__(raw_issue.key, raw_issue.fields.summary)
         self._raw_issue = raw_issue
         self._jira = jira
         self._issue_counts = None
 
     @property
-    def issue_counts(self: JiraEpic) -> IssueCounts:
+    def issue_counts(self) -> IssueCounts:
         if not self._issue_counts:
             self._issue_counts = _load_issue_counts(self, self._jira)
 
@@ -239,7 +241,7 @@ class JiraEpic(Epic):
         ]
 
     @property
-    def labels(self: JiraIssue) -> List[str]:
+    def labels(self) -> List[str]:
         return self._raw_issue.fields.labels
 
     @property
@@ -298,4 +300,7 @@ def _load_jira_token() -> str:
         ),  # Override with env file from home directory
         **os.environ,  # Override with environment variables
     }
-    return env_values.get("jiraToken")
+    jira_token = env_values.get("jiraToken")
+    if not jira_token or not isinstance(jira_token, str):
+        raise ValueError("JiraToken could not be loaded")
+    return jira_token
