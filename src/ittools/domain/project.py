@@ -13,7 +13,7 @@ T = TypeVar("T", bound="Parent")  # noqa
 class Project:
     """A large unit of work, encapsulating multiple smaller units of work described by Epics"""
 
-    def __init__(self: Project, project_key: str, epics: List[Epic]):
+    def __init__(self, project_key: str, epics: List[Epic]):
         self.key = project_key
         self.epics = epics
         self._issue_counts = None
@@ -24,13 +24,13 @@ class Project:
         return cls(project_key, epics)
 
     @property
-    def durations(self: Project) -> List[float]:
+    def durations(self) -> List[float]:
         durations = []
         # durations.extend(list(map(lambda issue: issue.duration, epic.issues)))
         return durations
 
     @property
-    def issue_counts(self: Project) -> IssueCounts:
+    def issue_counts(self) -> IssueCounts:
         if not self._issue_counts:
             self._issue_counts = reduce(
                 lambda accumulation, epic: accumulation + epic.issue_counts,

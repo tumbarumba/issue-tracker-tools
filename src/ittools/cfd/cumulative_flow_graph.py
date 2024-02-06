@@ -55,7 +55,7 @@ colour_schemes = {
 
 class CumulativeFlowGraph:
     def __init__(
-        self: CumulativeFlowGraph,
+        self,
         project_config: ProjectConfig,
         csv_file: str,
         png_file: str,

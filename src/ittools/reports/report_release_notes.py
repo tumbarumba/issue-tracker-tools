@@ -8,7 +8,7 @@ from .report_issue_summary import IssueSummaryReport
 
 class ReleaseNotesReport:
     def __init__(
-        self: ReleaseNotesReport,
+        self,
         opts: ReportOptions,
         jira: JiraServer,
         no_tasks: bool,
@@ -19,7 +19,7 @@ class ReleaseNotesReport:
         self.no_tasks = no_tasks
         self.markdown = markdown
 
-    def run(self: ReleaseNotesReport, issue_keys: List[str]) -> None:
+    def run(self, issue_keys: List[str]) -> None:
         report_issues = self.jira.query_issue_keys(issue_keys)
         if self.no_tasks:
             report_issues = list(

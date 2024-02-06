@@ -13,39 +13,39 @@ this.date_source = datetime.date
 
 
 class EpicIssues:
-    def __init__(self: EpicIssues, epic: JiraEpic, issues: List[JiraIssue]):
+    def __init__(self, epic: JiraEpic, issues: List[JiraIssue]):
         self.epic = epic
         self.issues: List[JiraIssue] = sorted(issues, key=lambda issue: issue.key)
 
     @property
-    def epic_key(self: EpicIssues) -> str:
+    def epic_key(self) -> str:
         return self.epic.key
 
     @property
-    def epic_summary(self: EpicIssues) -> str:
+    def epic_summary(self) -> str:
         return self.epic.summary
 
 
 class Project:
-    def __init__(self: Project, label: str):
+    def __init__(self, label: str):
         self.label = label
         self.epics: Dict[str, EpicIssues] = {}
 
-    def add_epic(self: Project, epic: JiraEpic, issues: List[JiraIssue]) -> None:
+    def add_epic(self, epic: JiraEpic, issues: List[JiraIssue]) -> None:
         self.epics[epic.key] = EpicIssues(epic, issues)
 
     @property
-    def issues(self: Project) -> List[JiraIssue]:
+    def issues(self) -> List[JiraIssue]:
         return [issue for epic_issues in self.epics.values() for issue in epic_issues.issues]
 
     @property
-    def issue_durations(self: Project) -> List[float]:
+    def issue_durations(self) -> List[float]:
         return [issue.duration for issue in self.issues]
 
 
 class IssueSummaryReport:
     def __init__(
-        self: IssueSummaryReport,
+        self,
         opts: ReportOptions,
         jira: JiraServer,
         show_stats: bool,
@@ -60,7 +60,7 @@ class IssueSummaryReport:
             for index, issue_type in enumerate(opts.jira_config.issuetypes)
         }
 
-    def run(self: IssueSummaryReport, report_issues: List[JiraIssue]) -> None:
+    def run(self, report_issues: List[JiraIssue]) -> None:
         if not report_issues:
             print("No issues found")
             return
@@ -86,7 +86,7 @@ class IssueSummaryReport:
             print(f" {total_count:3} (100%): Total")
 
     def build_projects(
-        self: IssueSummaryReport, report_issues: List[JiraIssue]
+        self, report_issues: List[JiraIssue]
     ) -> Dict[str, Project]:
         projects: Dict[str, Project] = {}
         report_issues.sort(key=lambda issue: issue.epic_key)
@@ -101,7 +101,7 @@ class IssueSummaryReport:
 
         return projects
 
-    def report_project(self: IssueSummaryReport, project: Project) -> None:
+    def report_project(self, project: Project) -> None:
         self.print_heading_l1(f"Project: {project.label}")
 
         for epic_key in sorted(project.epics):
@@ -118,7 +118,7 @@ class IssueSummaryReport:
             print_statistics(f"project {project.label}", project.issues)
             print()
 
-    def print_heading_l1(self: IssueSummaryReport, heading: str) -> None:
+    def print_heading_l1(self, heading: str) -> None:
         if self.markdown:
             print(f"## {heading}")
         else:
@@ -127,14 +127,14 @@ class IssueSummaryReport:
 
         print()
 
-    def print_heading_epic(self: IssueSummaryReport, epic: JiraEpic) -> None:
+    def print_heading_epic(self, epic: JiraEpic) -> None:
         if self.markdown:
             print(f"### {epic.summary} ([{epic.key}]({epic.url}))")
             print()
         else:
             print(f"Epic {epic.key}: {epic.summary}")
 
-    def print_issue(self: IssueSummaryReport, issue: JiraIssue) -> None:
+    def print_issue(self, issue: JiraIssue) -> None:
         issue_icon = self.type_display[issue.issue_type]
 
         if self.markdown:
