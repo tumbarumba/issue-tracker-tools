@@ -23,7 +23,7 @@ d=$first_date
 while [ "$d" != "$stop_date" ]; do
     output_file="$cfd_dir/cfd-$d.png"
     if [ ! -f $output_file ]; then
-        cfd -p "$project_config" -t $d
+        cfd -t $d "$project_config"
     fi
     d=$(date -I -d "$d + 1 day")
 done
