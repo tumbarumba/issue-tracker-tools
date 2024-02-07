@@ -105,9 +105,9 @@ Options:
 
 Commands:
   epic-summary  Report on stories within epics.
-  epicissues    Generate jql to search issues for epics with a given label
   in-progress   Report on issues currently in progress.
   issue         Report on issue detail.
+  jql-label     Generate jql to search issues for epics with a given label
   project       Report on progress for a project.
   release       Describes a list of tickets as release notes
   resolved      Report on recently closed issues.

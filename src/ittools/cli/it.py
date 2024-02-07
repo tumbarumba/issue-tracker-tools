@@ -236,11 +236,12 @@ def resolved(
 @issue_tracker.command()
 @click.argument("label")
 @click.pass_context
-def epicissues(ctx: click.Context, label: str) -> None:
+def jql_label(ctx: click.Context, label: str) -> None:
     """Generate jql to search issues for epics with a given label"""
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
-    issues = server.query_jql_issues(f"labels = {label} order by key")
+    jql = f"project = DS AND type = Epic AND 'Epic Status' != Done AND labels = {label} order by key"
+    issues = server.query_jql_issues(jql)
     keys = [issue.key for issue in issues]
     print(f"'Epic Link' in ({', '.join(keys)})")
 
