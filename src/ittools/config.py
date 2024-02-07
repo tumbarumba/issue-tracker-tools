@@ -52,6 +52,12 @@ class JiraConfig:
         self.issuetypes: Dict[str, Dict[str, str]] = jira_config.get(
             "issuetypes", DEFAULT_ISSUE_TYPES
         )
+        project_keys = jira_config.get("project_keys", [])
+
+        if not project_keys:
+            raise ValueError("Unable to find project keys")
+
+        self.project_keys = [str(key) for key in project_keys]
 
 
 class ProjectConfig:

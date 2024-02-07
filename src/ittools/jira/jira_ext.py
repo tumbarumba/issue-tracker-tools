@@ -27,6 +27,7 @@ class JiraServer(IssueProvider, JIRA):
         self._verbose = verbose
         self._config = jira_config
         self._custom_fields = self._find_custom_fields()
+        self._project_query = f"project IN ({','.join(jira_config.project_keys)})"
 
     def load_project_epics(self, project_key: str) -> List[JiraEpic]:
         return self.query_project_epics(project_key)
@@ -72,16 +73,16 @@ class JiraServer(IssueProvider, JIRA):
 
     def query_project_epics(self, project_label: str) -> List[JiraEpic]:
         return self.query_jql_epics(
-            f"project = DS AND issuetype = Epic and labels = {project_label} ORDER BY rank"
+            f"{self._project_query} AND issuetype = Epic and labels = {project_label} ORDER BY rank"
         )
 
     def query_open_epics(self) -> List[JiraEpic]:
         return self.query_jql_epics(
-            "project = DS and issueType = Epic and 'Epic Status' != Done order by rank"
+            f"{self._project_query} and issueType = Epic and 'Epic Status' != Done order by rank"
         )
 
     def query_fix_version(self, fix_version: str) -> List[JiraIssue]:
-        return self.query_jql_issues(f"project = DS AND fixVersion = {fix_version}")
+        return self.query_jql_issues(f"{self._project_query} AND fixVersion = {fix_version}")
 
     def query_issue_keys(self, issue_keys: List[str]) -> List[JiraIssue]:
         return self.query_jql_issues(f"key in ({', '.join(issue_keys)})")
@@ -98,7 +99,7 @@ class JiraServer(IssueProvider, JIRA):
         self, from_date: str, to_date: str
     ) -> List[JiraIssue]:
         jql = (
-            f"project = DS and 'Epic Link' is not null and \
+            f"{self._project_query} and 'Epic Link' is not null and \
                 status in ('Done', 'Awaiting Demo') and \
                 resolved >= '{from_date}' and resolved < '{to_date}' \
                 order by resolved",
@@ -109,7 +110,7 @@ class JiraServer(IssueProvider, JIRA):
         return self.query_jql_issues(f"'Epic Link' = {epic_key} order by Status")
 
     def query_working_issues(self) -> List[JiraIssue]:
-        jql = "project = DS and issuetype in ('Story', 'Task', 'Bug') and \
+        jql = f"{self._project_query} and issuetype in ('Story', 'Task', 'Bug') and \
                status in ('In Progress', 'In Review', 'Awaiting Merge', 'Under Test') \
                ORDER BY created ASC"
         return self.query_jql_issues(jql)

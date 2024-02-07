@@ -6,12 +6,13 @@
     "configurations": [
         {"name":"Python: Current File","type":"python","request":"launch","program":"${file}","console":"integratedTerminal","justMyCode":true},
         {
-            "name": "Python: Current File",
+            "name": "itt",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "src/ittools/cli/it.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false,
+            "args": []
         }
     ]
 }

@@ -55,6 +55,8 @@ provider: jira
 report_dir: ~/jirareports
 jira:
   url: https://url.of.jira/
+  project_keys:
+    - "MyProjectKey"
 projects:
   - name: Project Name
     key: project_label
@@ -164,7 +166,7 @@ updated.
 ### Issue Tracker: Project
 
 ```
-➜ it project -h 
+➜ it project -h
 Usage: it project [OPTIONS] PROJECT
 
   Report on progress for a project.
