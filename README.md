@@ -75,23 +75,47 @@ In this example:
 * The top level URL of the Jira server is "`https://url.of.jira`"
 * The reports will be limited to just the Jira projects with project keys "`EJP1`" and "`EJP2`"
 
-### Authentication
+### Jira Authentication
 
-Authentication to the Jira server is required. This is done through setting up a Personal Access Token (PAT). In Jira, navigate from your profile picture (in the top right corner), select "Personal Access Tokens", and click "Create Token".
+Authentication to the Jira server is required. `issue-tracker-tools` supports two
+alternative methods of authentication:
+* A Personal Access Token (PAT). This method is available on on-prem instances of Jira
+* An API key. This authentication method is available on Jira cloud instances.
 
-Once you have created the token, it needs to be made accessible from the script. This is done using an environment variable called `jiraToken`.
+Only one authentication method should be used. See details below on how to do this.
+
+The scripts will look for authentication values in the environment. This is done using an environment variable called `jiraToken`.
 
 There are 2 ways this can be done:
-* Set an environment variable call `jiraToken` in your `.bashrc` file or equivalent.
-* Create a file called `.env`, and store it in either the current directory, or your home directory.
+* Set the environment variables in your `.bashrc`, `.zshrc`, or equivalent.
+* Create a file called `.env`, and store it in either the current directory, or your home directory. This method is preferred, as you have better control over the access of the authentication secrets.
 
-The `.env` file is loaded using Python's `dotenv` module. The format looks like this:
+The `.env` file is loaded using Python's `dotenv` module. See below for examples.
 
-```
+#### Personal Access Token (PAT)
+
+To create a PAT, navigate from your profile picture in Jira (in the top right corner), select "Personal Access Tokens", and click "Create Token".
+Save the value of the token in an environment variable called `jiraToken`. The `.env` file will look similar to this:
+
+```properties
 jiraToken=xxxxxxxxxxxxxxxxxxxxx
 ```
 
 (Of course, replace the x's with the value of your own PAT)
+
+#### API Token
+
+Instructions for creating API Tokens are here:
+* [https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/)
+
+Both the user and API token must be stored in the environment in the variables `jiraUser` and `jiraApiToken` respectively. The `.env` file will look similar to this:
+
+```properties
+jiraUser=xxxxx
+jiraApiToken=yyyyy
+```
+
+(Of course, replace the x's and y's with your own values)
 
 ## Usage
 

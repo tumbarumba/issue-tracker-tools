@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import dateutil.parser
 from dotenv import dotenv_values
@@ -21,9 +21,7 @@ from ittools.domain.issue_provider import IssueProvider
 
 class JiraServer(IssueProvider, JIRA):
     def __init__(self, verbose: bool, jira_config: JiraConfig):
-        super().__init__(
-            token_auth=_load_jira_token(), options={"server": jira_config.url}
-        )
+        super().__init__(**_build_jira_args(jira_config))
         self._verbose = verbose
         self._config = jira_config
         self._custom_fields = self._find_custom_fields()
@@ -293,15 +291,29 @@ def _filter_by_state(
     return list(filter(lambda issue: issue.status in states_to_check, issues))
 
 
-def _load_jira_token() -> str:
-    env_values = {
+def _build_jira_args(jira_config: JiraConfig) -> Dict[str, Any]:
+    jira_args = {
+        "options": {"server": jira_config.url},
+        "validate": True,
+    }
+    env = _load_env()
+    if "jiraToken" in env:
+        jira_args["token_auth"] = env["jiraToken"]
+    elif "jiraUser" in env:
+        if "jiraApiToken" not in env:
+            raise ValueError("'jiraUser' authentication requires 'jiraApiToken'")
+        jira_args["basic_auth"] = (env["jiraUser"], env["jiraApiToken"])
+    else:
+        raise ValueError("Authentication required (define 'jiraToken' or 'jiraUser' in environment")
+
+    return jira_args
+
+
+def _load_env() -> Dict[str, Optional[str]]:
+    return {
         **dotenv_values(".env"),  # Load env file from current directory
         **dotenv_values(
             os.path.expanduser("~/.env")
         ),  # Override with env file from home directory
         **os.environ,  # Override with environment variables
     }
-    jira_token = env_values.get("jiraToken")
-    if not jira_token or not isinstance(jira_token, str):
-        raise ValueError("JiraToken could not be loaded")
-    return jira_token
