@@ -3,7 +3,7 @@ import click
 import os
 import datetime
 
-from ittools.config import load_issue_tracker_config, ReportOptions
+from ittools.config import load_issue_tracker_config, load_project_config, IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
 
 
@@ -40,20 +40,26 @@ def cfd(
     Requires a project progress file (progress.csv) in the project directory. This is normally generated
     by the `it project` command
     """
-    options = build_report_options(verbose, config)
+    it_config = make_it_config(verbose, config)
+    project_config = make_project_config(verbose, it_config.report_dir, project)
     report_date = date_option_or_today(today)
-    csv_file = f"{options.report_dir}/{project}/progress.csv"
-    png_file = f"{options.report_dir}/{project}/cfd-{str(report_date)}.png"
-    project_config = options.project_configs[project]
+    csv_file = f"{it_config.report_dir}/{project}/progress.csv"
+    png_file = f"{it_config.report_dir}/{project}/cfd-{str(report_date)}.png"
     CumulativeFlowGraph(project_config, csv_file, png_file, report_date).run(open_graph)
 
 
-def build_report_options(verbose: bool, config_file: click.Path) -> ReportOptions:
+def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
     config_file = config_file or os.path.expanduser(DEFAULT_CONFIG_FILE)
     if verbose:
-        print(f"Using config file '{config_file}'")
-    config = load_issue_tracker_config(config_file)
-    return ReportOptions(config, verbose)
+        print(f"Using issue tracker config file '{config_file}'")
+    return load_issue_tracker_config(config_file)
+
+
+def make_project_config(verbose: bool, report_dir: str, project_label: str) -> ProjectConfig:
+    config_file = f"{report_dir}/{project_label}/project.yml"
+    if verbose:
+        print(f"Using project config file '{config_file}'")
+    return load_project_config(config_file)
 
 
 def date_option_or_today(option: click.DateTime) -> datetime.date:

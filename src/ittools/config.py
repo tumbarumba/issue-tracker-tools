@@ -32,15 +32,6 @@ class IssueTrackerConfig:
             config.get("report_dir", REPORT_DIR_DEFAULT)
         )
         self.jira_config = JiraConfig(config["jira"])
-        self.projects = build_projects(config.get("projects", []))
-
-
-def build_projects(project_configs: List[Dict[str, Any]]):
-    projects = map(
-        lambda project_config: ProjectConfig(project_config),
-        project_configs,
-    )
-    return dict((project.key, project) for project in projects)
 
 
 class JiraConfig:
@@ -74,7 +65,6 @@ class ReportOptions(object):
         verbose: bool = False,
     ):
         self.jira_config = issue_tracker_config.jira_config
-        self.project_configs = issue_tracker_config.projects
         self.report_dir = issue_tracker_config.report_dir
         self.verbose: bool = verbose
 
@@ -83,3 +73,9 @@ def load_issue_tracker_config(config_file: str) -> IssueTrackerConfig:
     with open(config_file, "r") as file:
         config = yaml.safe_load(file)
         return IssueTrackerConfig(config)
+
+
+def load_project_config(config_file: str) -> ProjectConfig:
+    with open(config_file, "r") as file:
+        config = yaml.safe_load(file)
+        return ProjectConfig(config.get("project"))
