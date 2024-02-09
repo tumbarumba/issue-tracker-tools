@@ -11,7 +11,6 @@ DEFAULT_STATUSES = [
     {"display": "🌑", "name": "Ready for Development"},
     {"display": "🌘", "name": "In Progress"},
     {"display": "🌗", "name": "In Review"},
-    {"display": "🌗", "name": "Awaiting Merge"},
     {"display": "🌖", "name": "Under Test"},
     {"display": "🌕", "name": "Awaiting Demo"},
     {"display": "🌕", "name": "Done"},

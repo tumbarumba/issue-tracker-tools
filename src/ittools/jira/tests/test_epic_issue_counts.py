@@ -62,13 +62,12 @@ def test_epic_in_progress_stories():
             [
                 mock_story("In Progress"),
                 mock_story("In Review"),
-                mock_story("Awaiting Merge"),
                 mock_story("Under Test"),
             ],
-            [mock_comment("Expected size: 4")],
+            [mock_comment("Expected size: 3")],
         ),
     )
-    assert_equal_counts(epic.issue_counts, IssueCounts(0, 4, 0))
+    assert_equal_counts(epic.issue_counts, IssueCounts(0, 3, 0))
 
 
 def test_epic_done_stories():

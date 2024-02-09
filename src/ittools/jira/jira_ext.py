@@ -109,7 +109,7 @@ class JiraServer(IssueProvider, JIRA):
 
     def query_working_issues(self) -> List[JiraIssue]:
         jql = f"{self._project_query} and issuetype in ('Story', 'Task', 'Bug') and \
-               status in ('In Progress', 'In Review', 'Awaiting Merge', 'Under Test') \
+               status in ('In Progress', 'In Review', 'Under Test') \
                ORDER BY created ASC"
         return self.query_jql_issues(jql)
 
@@ -248,7 +248,7 @@ class JiraEpic(Epic):
         return self._raw_issue.permalink()
 
 
-IN_PROGRESS_STATES = ["In Progress", "In Review", "Awaiting Merge", "Under Test"]
+IN_PROGRESS_STATES = ["In Progress", "In Review", "Under Test"]
 DONE_STATES = ["Awaiting Demo", "Done"]
 EXCLUDE_STATES = ["Closed", "Duplicate"]
 
