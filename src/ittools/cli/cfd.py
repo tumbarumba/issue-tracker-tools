@@ -2,6 +2,7 @@
 import click
 import os
 import datetime
+import sys
 
 from ittools.config import load_issue_tracker_config, load_project_config, IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
@@ -69,4 +70,9 @@ def date_option_or_today(option: click.DateTime) -> datetime.date:
 
 
 if __name__ == "__main__":
-    cfd()
+    try:
+        cfd()
+        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(f"Command failed: {getattr(e, 'message', repr(e))}")
+        sys.exit(1)

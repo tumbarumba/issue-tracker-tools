@@ -247,4 +247,9 @@ def jql_label(ctx: click.Context, label: str) -> None:
 
 
 if __name__ == "__main__":
-    issue_tracker()
+    try:
+        issue_tracker()
+        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(f"Command failed: {getattr(e, 'message', repr(e))}")
+        sys.exit(1)
