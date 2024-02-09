@@ -11,6 +11,14 @@ These tools are described in more detail below.
 
 ## Installation
 
+Clone the repository:
+
+```commandline
+git clone https://github.com/tumbarumba/issue-tracker-tools.git
+cd issue-tracker-tools
+```
+
+
 Setup your Python environment (a virtualenv is preferred). For example, the standard `venv`
 module can be set up like this:
 
@@ -21,7 +29,7 @@ python -m venv .venv
 . .venv/bin/activate
 ```
 
-`cd` to the base directory of the cloned repository, and run the command:
+Install the dependencies:
 
 ```
 pip install -r requirements.txt
@@ -34,7 +42,8 @@ python -m build
 pip install $(find dist -name "*.whl")
 ```
 
-To install source code for direct use:
+If you intend to make changes to the code, you should instead install
+the source code for direct use:
 
 ```
 pip install --editable .
@@ -48,7 +57,7 @@ The `it` and `cfd` scripts requires a configuration file, called `issuetracker.y
 
 The scripts will look for this file at `$HOME/issuetracker.yml` by default, although this can be overriden on the command line using the `-c` or `--config` option.
 
-An example of the Jira config file:
+An example of the config file:
 
 ```yaml
 provider: jira
@@ -56,21 +65,15 @@ report_dir: ~/jirareports
 jira:
   url: https://url.of.jira/
   project_keys:
-    - "MyProjectKey"
-projects:
-  - name: Project Name
-    key: project_label
-    milestones:
-      - name: Iteration 3 Demo
-        date: 2022-08-31
-  - name: Another Project
-    key: project_label_2
-    milestones:
-      - name: Project 2 Checkpoint
-        date: 2023-09-30
-      - name: Project 2 Delivery
-        date: 2023-10-31
+  - EJP1
+  - EJP2
 ```
+
+In this example:
+* The back end issue tracker is "`jira`"
+* The top level directory for report files will be "`~/jirareports`"
+* The top level URL of the Jira server is "`https://url.of.jira`"
+* The reports will be limited to just the Jira projects with project keys "`EJP1`" and "`EJP2`"
 
 ### Authentication
 
