@@ -222,7 +222,6 @@ def resolved(
 ) -> None:
     """Report on recently closed issues."""
     options: ReportOptions = ctx.obj
-    csv_file = f"{options.report_dir}/resolved.csv"
     server = JiraServer(options.verbose, options.jira_config)
 
     if from_date:
@@ -230,7 +229,7 @@ def resolved(
     if to_date:
         to_date = to_date.date()
 
-    ResolvedReport(options, server).run(days, from_date, to_date, label, csv_file)
+    ResolvedReport(options, server).run(days, from_date, to_date, label)
 
 
 @issue_tracker.command()
