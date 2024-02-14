@@ -65,6 +65,11 @@ class IssueSummaryReport:
             print("No issues found")
             return
 
+        issues_without_epics = [issue.key for issue in report_issues if not issue.epic_key]
+        if issues_without_epics:
+            print("Unable to run report while there are issues without epics:")
+            print(f"\t{', '.join(issues_without_epics)}")
+
         projects = self.build_projects(report_issues)
 
         for project_label in sorted(projects):
