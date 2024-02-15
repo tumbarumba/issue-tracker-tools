@@ -69,6 +69,7 @@ class IssueSummaryReport:
         if issues_without_epics:
             print("Unable to run report while there are issues without epics:")
             print(f"\t{', '.join(issues_without_epics)}")
+            return
 
         projects = self.build_projects(report_issues)
 
