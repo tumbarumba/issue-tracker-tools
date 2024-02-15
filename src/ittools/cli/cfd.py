@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import click
 import os
+import os.path
 import datetime
 import sys
 
@@ -58,9 +59,14 @@ def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig
 
 def make_project_config(verbose: bool, report_dir: str, project_label: str) -> ProjectConfig:
     config_file = f"{report_dir}/{project_label}/project.yml"
-    if verbose:
-        print(f"Using project config file '{config_file}'")
-    return load_project_config(config_file)
+    if os.path.isfile(config_file):
+        if verbose:
+            print(f"Using project config file '{config_file}'")
+        return load_project_config(config_file)
+    else:
+        if verbose:
+            print(f"Project config file missing ('{config_file}'), using default")
+        return ProjectConfig({"name": project_label, "key": project_label, })
 
 
 def date_option_or_today(option: click.DateTime) -> datetime.date:
