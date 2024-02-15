@@ -8,9 +8,8 @@ fi
 set -e
 
 project_config=$1
-report_dir=$(python -m yq -r .project.report_dir $project_config)
+cfd_dir=$(dirname $project_config)
 project_label=$(python -m yq -r .project.label $project_config)
-cfd_dir="${report_dir/#\~/$HOME}/$project_label"
 csv_file="$cfd_dir/progress.csv"
 
 echo "Reading data from $csv_file"
@@ -23,13 +22,13 @@ d=$first_date
 while [ "$d" != "$stop_date" ]; do
     output_file="$cfd_dir/cfd-$d.png"
     if [ ! -f $output_file ]; then
-        cfd -t $d "$project_config"
+        cfd -t $d "$project_label"
     fi
     d=$(date -I -d "$d + 1 day")
 done
 
 animation=$cfd_dir/cfd-anim-$last_date.gif
-echo "Creating animation $animation..."
+echo "Creating animation $animation"
 
 convert -delay 10 -loop 0 $cfd_dir/cfd-*.png $animation
 mogrify -layers optimize $animation
