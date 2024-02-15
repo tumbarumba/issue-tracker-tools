@@ -67,8 +67,20 @@ class CumulativeFlowGraph:
         self.report_date = report_date
 
     def run(self, open_graph):
-        print(f"Reading cumulative flow data from {str(self.csv_file)}")
+        print(f"Cumulative Flow for project {self.project_config.name}")
+        print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         flow_data = self.read_csv_values()
+        print(f"  remaining issues: {flow_data.total[-1] - flow_data.done[-1]}")
+        print("  trends (issues/day):")
+        print(f"    current     {flow_data.current_trend.slope:4.1f}")
+        optimistic_date = f" (complete {flow_data.optimistic_completion_date})" \
+            if flow_data.optimistic_completion_date else ""
+        print(f"    optimistic  {flow_data.optimistic_trend.slope:4.1f}{optimistic_date}")
+        pessimistic_date = f" (complete {flow_data.pessimistic_completion_date})" \
+            if flow_data.pessimistic_completion_date else ""
+        print(f"    pessimistic {flow_data.pessimistic_trend.slope:4.1f}{pessimistic_date}")
+        print()
+
         self.build_graph(flow_data)
 
         if open_graph:
@@ -120,12 +132,19 @@ class CumulativeFlowGraph:
 
     @property
     def final_milestone_date(self):
+        if not self.project_config.milestones:
+            return None
+
         final_milestone = self.project_config.milestones[-1]
         return final_milestone["date"]
 
     def calc_end_date(self, flow_data):
         milestone_date = self.final_milestone_date
         predicted_end_date = self.last_milestone_or_end_date(flow_data, milestone_date)
+        if not milestone_date:
+            # No milestones define, just go to the predicted end date
+            return predicted_end_date + timedelta(days=2)
+
         if (predicted_end_date - milestone_date).days < 15:
             # if final milestone and predicted finish are relatively close show both
             end_date = max(predicted_end_date, milestone_date) + timedelta(days=2)
