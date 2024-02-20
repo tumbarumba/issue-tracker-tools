@@ -1,5 +1,5 @@
 #!/bin/bash
 
 ticket_re='DS-[[:digit:]]{4}'
-tickets=`git log --pretty=format:'%s' $@ | grep -oE $ticket_re | sort | uniq`
+tickets=`git log --pretty=format:'%B' $@ | grep -oE $ticket_re | sort | uniq`
 for t in $tickets; do echo $t; done;
