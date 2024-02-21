@@ -150,7 +150,7 @@ class IssueSummaryReport:
                 duration = f"{issue.duration:5.2f} "
             else:
                 duration = ""
-            print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary}")
+            print(f"[{duration}{issue_icon}] {issue.key}: {issue.summary} ({issue.assignee})")
 
 
 def print_statistics(title: str, issues: List[JiraIssue]) -> None:

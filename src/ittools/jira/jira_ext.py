@@ -164,6 +164,15 @@ class JiraIssue(Issue):
         self.raw_issue.update(update={"fixVersions": [{"add": {"name": new_fix_version}}]})
 
     @property
+    def assignee(self) -> str:
+        assignee = "None"
+        if "assignee" in self.raw_issue.raw["fields"]:
+            assignee_field = self.raw_issue.raw["fields"]["assignee"]
+            if isinstance(assignee_field, dict) and "displayName" in assignee_field:
+                assignee = assignee_field["displayName"]
+        return assignee
+
+    @property
     def status(self) -> str:
         return self.raw_issue.fields.status.name
 

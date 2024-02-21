@@ -87,10 +87,7 @@ class InProgressReport:
     def print_issue(self, issue: JiraIssue):
         type_icon = self.type_display[issue.issue_type]
         status_icon = self.status_display[issue.status]
-        assignee = issue.raw_issue.fields.assignee
-        print(
-            f"{issue.duration:5.2f} {type_icon}{status_icon} {issue.key}: {issue.summary} ({assignee})"
-        )
+        print(f"{issue.duration:5.2f} {type_icon}{status_icon} {issue.key}: {issue.summary} ({issue.assignee})")
 
 
 def _team_for(epic_key: str, epics: Dict[str, JiraEpic]) -> str:

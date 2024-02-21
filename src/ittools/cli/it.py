@@ -216,9 +216,15 @@ def release(
     type=click.STRING,
     help="filter issues to epics with this label"
 )
+@click.option(
+    "--team",
+    "team",
+    type=click.STRING,
+    help="filter issues those completed by the given team"
+)
 @click.pass_context
 def resolved(
-    ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime, label: str
+    ctx: click.Context, days: int, from_date: click.DateTime, to_date: click.DateTime, label: str, team: str
 ) -> None:
     """Report on recently closed issues."""
     options: ReportOptions = ctx.obj
@@ -229,7 +235,14 @@ def resolved(
     if to_date:
         to_date = to_date.date()
 
-    ResolvedReport(options, server).run(days, from_date, to_date, label)
+    if team:
+        team_members = options.teams.get(team, list())
+        if not team_members:
+            raise ValueError(f"No members in team '{team}'")
+    else:
+        team_members = []
+
+    ResolvedReport(options, server).run(days, from_date, to_date, label, team, team_members)
 
 
 @issue_tracker.command()

@@ -31,6 +31,7 @@ class IssueTrackerConfig:
             config.get("report_dir", REPORT_DIR_DEFAULT)
         )
         self.jira_config = JiraConfig(config["jira"])
+        self.teams = config.get("teams", dict())
 
 
 class JiraConfig:
@@ -65,6 +66,7 @@ class ReportOptions(object):
     ):
         self.jira_config = issue_tracker_config.jira_config
         self.report_dir = issue_tracker_config.report_dir
+        self.teams = issue_tracker_config.teams
         self.verbose: bool = verbose
 
 

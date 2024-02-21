@@ -4,3 +4,10 @@ jira:
   url: https://url.of.jira/
   project_keys:
     - "MyProjectKey"
+teams:
+  Team1:
+    - John Doe
+    - James Dean
+  Team2:
+    - Jane Doe
+    - Jessica Rabbit
