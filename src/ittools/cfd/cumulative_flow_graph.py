@@ -66,9 +66,11 @@ class CumulativeFlowGraph:
         self.png_file = png_file
         self.report_date = report_date
 
-    def run(self, open_graph):
+    def run(self, verbose: bool, open_graph: bool):
         print(f"Cumulative Flow for project {self.project_config.name}")
-        print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        if verbose:
+            print(f"Reading flow data from '{self.csv_file}'")
         flow_data = self.read_csv_values()
         print(f"  remaining issues: {flow_data.total[-1] - flow_data.done[-1]}")
         print("  trends (issues/day):")
@@ -82,6 +84,16 @@ class CumulativeFlowGraph:
         print()
 
         self.build_graph(flow_data)
+
+        if verbose:
+            trend_size = start = min(len(flow_data.dates), FlowData.TREND_PERIOD)
+            first_trend_date = flow_data.dates[-trend_size]
+            print()
+            print(f"Trend history:")
+            for (date, slope) in zip(flow_data.dates, flow_data.slope_history):
+                if date == first_trend_date:
+                    print("----")
+                print(f"  {date}: {slope:4.1f}")
 
         if open_graph:
             os.system(f"xdg-open '{self.png_file}'")

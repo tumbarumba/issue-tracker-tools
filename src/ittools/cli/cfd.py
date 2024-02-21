@@ -47,7 +47,7 @@ def cfd(
     report_date = date_option_or_today(today)
     csv_file = f"{it_config.report_dir}/{project}/progress.csv"
     png_file = f"{it_config.report_dir}/{project}/cfd-{str(report_date)}.png"
-    CumulativeFlowGraph(project_config, csv_file, png_file, report_date).run(open_graph)
+    CumulativeFlowGraph(project_config, csv_file, png_file, report_date).run(verbose, open_graph)
 
 
 def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
