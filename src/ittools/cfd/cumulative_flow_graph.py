@@ -60,11 +60,13 @@ class CumulativeFlowGraph:
         csv_file: str,
         png_file: str,
         report_date: datetime.date,
+        trend_period: int,
     ):
         self.project_config = project_config
         self.csv_file = csv_file
         self.png_file = png_file
         self.report_date = report_date
+        self.trend_period = trend_period
 
     def run(self, verbose: bool, open_graph: bool):
         print(f"Cumulative Flow for project {self.project_config.name}")
@@ -86,7 +88,7 @@ class CumulativeFlowGraph:
         self.build_graph(flow_data)
 
         if verbose:
-            trend_size = min(len(flow_data.dates), FlowData.TREND_PERIOD)
+            trend_size = min(len(flow_data.dates), flow_data.trend_period)
             first_trend_date = flow_data.dates[-trend_size]
             print()
             print("Trend history:")
@@ -126,7 +128,7 @@ class CumulativeFlowGraph:
 
     def read_csv_values(self):
         data_frame = pandas.read_csv(self.csv_file)
-        return FlowData(data_frame, self.report_date)
+        return FlowData(data_frame, self.report_date, self.trend_period)
 
     def select_final_axis(self, flow_data):
         start_date = flow_data.dates[0]
@@ -241,7 +243,7 @@ class CumulativeFlowGraph:
 
     def write_current_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.report_date + timedelta(days=-FlowData.TREND_PERIOD + 1)
+        start_date = self.report_date + timedelta(days=-flow_data.trend_period + 1)
         if start_date < final_x_axis[0]:
             start_date = final_x_axis[0]
         end_date = self.report_date

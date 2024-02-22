@@ -10,16 +10,17 @@ from dateutil.parser import isoparse
 
 
 class FlowData:
-    TREND_PERIOD: int = 14
+    DEFAULT_TREND_PERIOD: int = 14
     MINIMUM_TREND_SLOPE = 0.001
 
-    def __init__(self, data_frame: pandas.DataFrame, today: datetime.date):
+    def __init__(self, data_frame: pandas.DataFrame, today: datetime.date, trend_period: int | None = None):
         self.today = today
         self.dates = self._load_dates(data_frame, today)
         self.pending = data_frame["pending"].tolist()[: len(self.dates)]
         self.in_progress = data_frame["in_progress"].tolist()[: len(self.dates)]
         self.done = data_frame["done"].tolist()[: len(self.dates)]
         self.total = data_frame["total"].tolist()[: len(self.dates)]
+        self.trend_period = trend_period or FlowData.DEFAULT_TREND_PERIOD
         self.slope_history = self._calculate_slopes()
         self.current_trend = self._calculate_current_trend()
         self.optimistic_trend = self._calculate_optimistic_trend()
@@ -44,7 +45,7 @@ class FlowData:
         return result
 
     def _select_regression_values(self, last_index):
-        start = max(0, last_index - FlowData.TREND_PERIOD)
+        start = max(0, last_index - self.trend_period)
         return self.done[start : last_index + 1]  # noqa
 
     def _calculate_current_trend(self):
@@ -52,13 +53,13 @@ class FlowData:
         return Trend(current_slope, self._calculate_implied_y_intercept(current_slope))
 
     def _calculate_optimistic_trend(self):
-        optimistic_slope = max(self.slope_history[-FlowData.TREND_PERIOD :])  # noqa
+        optimistic_slope = max(self.slope_history[-self.trend_period:])  # noqa
         return Trend(
             optimistic_slope, self._calculate_implied_y_intercept(optimistic_slope)
         )
 
     def _calculate_pessimistic_trend(self):
-        pessimistic_slope = min(self.slope_history[-FlowData.TREND_PERIOD :])  # noqa
+        pessimistic_slope = min(self.slope_history[-self.trend_period:])  # noqa
         return Trend(
             pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope)
         )

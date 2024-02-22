@@ -5,6 +5,7 @@ import os.path
 import datetime
 import sys
 
+from ittools.cfd.flow_data import FlowData
 from ittools.config import load_issue_tracker_config, load_project_config, IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
 
@@ -29,12 +30,20 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
     type=click.DateTime(formats=["%Y-%m-%d"]),
     help="Override today's date",
 )
+@click.option(
+    "-d",
+    "--days",
+    default=FlowData.DEFAULT_TREND_PERIOD,
+    type=click.INT,
+    help=f"Number of days to calculate trends (default: {FlowData.DEFAULT_TREND_PERIOD})",
+)
 @click.argument("project")
 def cfd(
     verbose: bool,
     config: click.Path,
     open_graph: bool,
     today: click.DateTime,
+    days: click.INT,
     project: str,
 ) -> None:
     """Create a cumulative flow diagram for a given project
@@ -47,7 +56,7 @@ def cfd(
     report_date = date_option_or_today(today)
     csv_file = f"{it_config.report_dir}/{project}/progress.csv"
     png_file = f"{it_config.report_dir}/{project}/cfd-{str(report_date)}.png"
-    CumulativeFlowGraph(project_config, csv_file, png_file, report_date).run(verbose, open_graph)
+    CumulativeFlowGraph(project_config, csv_file, png_file, report_date, days).run(verbose, open_graph)
 
 
 def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
