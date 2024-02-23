@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from dateutil.parser import isoparse
 from math import ceil
 from typing import List
 
 import numpy
 import pandas
-from dateutil.parser import isoparse
 
 
 class FlowData:
     DEFAULT_TREND_PERIOD: int = 14
     MINIMUM_TREND_SLOPE = 0.001
+    DEFAULT_SLOPE = numpy.float64(1.0)
 
     def __init__(self, data_frame: pandas.DataFrame, today: datetime.date, trend_period: int | None = None):
         self.today = today
@@ -21,48 +22,44 @@ class FlowData:
         self.done = data_frame["done"].tolist()[: len(self.dates)]
         self.total = data_frame["total"].tolist()[: len(self.dates)]
         self.trend_period = trend_period or FlowData.DEFAULT_TREND_PERIOD
-        self.slope_history = self._calculate_slopes()
+        self.slope_history = self._calculate_all_slopes()
         self.current_trend = self._calculate_current_trend()
         self.optimistic_trend = self._calculate_optimistic_trend()
         self.pessimistic_trend = self._calculate_pessimistic_trend()
 
     def _load_dates(self, data_frame, last_date):
-        all_dates = list(
-            map(lambda date_str: isoparse(date_str).date(), data_frame["date"])
-        )
+        all_dates = [isoparse(date_str).date() for date_str in data_frame["date"]]
         last_index = all_dates.index(last_date)
         return all_dates[: last_index + 1]
 
-    def _calculate_slopes(self) -> List[float]:
-        result = []
-        for index in range(len(self.done)):
-            regression_values = self._select_regression_values(index)
-            if len(regression_values) > 1:
-                trend = calculate_trend_coefficients(regression_values)
-                result.append(trend.slope)
-            else:
-                result.append(numpy.float64(1.0))
-        return result
+    def _calculate_all_slopes(self) -> List[float]:
+        """Calculate regression slopes for recent entries in the 'done' column"""
+        last_index = len(self.done)
+        first_index = max(0, last_index - self.trend_period)
+        return [self._calculate_slope(index) for index in range(first_index, last_index)]
 
-    def _select_regression_values(self, last_index):
-        start = max(0, last_index - self.trend_period)
-        return self.done[start : last_index + 1]  # noqa
+    def _calculate_slope(self, last_index: int) -> float:
+        """Calculate the regression slope at the give index of the 'done' column"""
+        first_index = max(0, last_index - self.trend_period)
+        regression_values = self.done[first_index : last_index + 1]  # noqa
+
+        if len(regression_values) < 2:
+            return FlowData.DEFAULT_SLOPE
+
+        trend = calculate_trend_coefficients(regression_values)
+        return trend.slope
 
     def _calculate_current_trend(self):
         current_slope = self.slope_history[-1]
         return Trend(current_slope, self._calculate_implied_y_intercept(current_slope))
 
     def _calculate_optimistic_trend(self):
-        optimistic_slope = max(self.slope_history[-self.trend_period:])  # noqa
-        return Trend(
-            optimistic_slope, self._calculate_implied_y_intercept(optimistic_slope)
-        )
+        optimistic_slope = max(self.slope_history)
+        return Trend(optimistic_slope, self._calculate_implied_y_intercept(optimistic_slope))
 
     def _calculate_pessimistic_trend(self):
-        pessimistic_slope = min(self.slope_history[-self.trend_period:])  # noqa
-        return Trend(
-            pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope)
-        )
+        pessimistic_slope = min(self.slope_history)
+        return Trend(pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope))
 
     def _calculate_implied_y_intercept(self, slope: float):
         """Force the calculated value of today's done to match the actual value by adjusting the intercept"""

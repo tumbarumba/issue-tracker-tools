@@ -88,13 +88,8 @@ class CumulativeFlowGraph:
         self.build_graph(flow_data)
 
         if verbose:
-            trend_size = min(len(flow_data.dates), flow_data.trend_period)
-            first_trend_date = flow_data.dates[-trend_size]
-            print()
-            print("Trend history:")
-            for (date, slope) in zip(flow_data.dates, flow_data.slope_history):
-                if date == first_trend_date:
-                    print("----")
+            print("\nTrend history:")
+            for (date, slope) in zip(flow_data.dates[-len(flow_data.slope_history):], flow_data.slope_history):
                 print(f"  {date}: {slope:4.1f}")
 
         if open_graph:
