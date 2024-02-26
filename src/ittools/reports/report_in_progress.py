@@ -93,15 +93,24 @@ class InProgressReport:
 def _team_for(epic_key: str, epics: Dict[str, JiraEpic]) -> str:
     if epic_key in epics:
         labels = epics[epic_key].labels
-        return _team_from_labels(labels)
+        return _team_from_label_list(labels)
     else:
         return "Ω"  # Omega should sort last alphabetically
 
 
-def _team_from_labels(labels: List[str]):
-    team_pattern = re.compile(r"^Team(\w+)(_.*)?$")
-    for label in labels:
-        match = team_pattern.match(label)
-        if match:
-            return match.group(1)
-    return ""
+def _team_from_label_list(labels: List[str]):
+    teams = [_team_from_label(label) for label in labels if label.startswith("Team")]
+    if len(teams) != 1:
+        # Multiple teams is the same as no team
+        return ""
+    return teams[0]
+
+
+team_pattern = re.compile(r"^Team(\w+)(_.*)?$")
+
+
+def _team_from_label(label: str) -> str | None:
+    match = team_pattern.match(label)
+    if match:
+        return match.group(1)
+    return None
