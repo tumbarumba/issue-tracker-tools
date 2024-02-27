@@ -30,7 +30,7 @@ done
 animation=$cfd_dir/cfd-anim-$last_date.gif
 echo "Creating animation $animation"
 
-convert -delay 20 -loop 0 $cfd_dir/cfd-*.png $animation
+convert -loop 0 -delay 20 $cfd_dir/cfd-*.png -delay 280 $cfd_dir/cfd-$last_date.png $animation
 mogrify -layers optimize $animation
 
 echo "Done"
