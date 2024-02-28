@@ -119,10 +119,17 @@ def add_fix_version(
     type=click.STRING,
     help="Update issue with specified fix version",
 )
+@click.option(
+    "-s",
+    "--summary",
+    is_flag=True,
+    default=False,
+    help="Show a short one-line summary",
+)
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
 def issue(
-    ctx: click.Context, open: bool, update_fix_version: str, issue_keys: List[str]
+    ctx: click.Context, open: bool, update_fix_version: str, summary: bool, issue_keys: List[str]
 ) -> None:
     """Report on issue detail."""
     if not issue_keys:
@@ -136,7 +143,7 @@ def issue(
     elif update_fix_version:
         add_fix_version(server, issue_keys, update_fix_version)
     else:
-        IssueDetailReport(server, options.verbose).run(issue_keys)
+        IssueDetailReport(options.jira_config, server, options.verbose, summary).run(issue_keys)
 
 
 @issue_tracker.command()

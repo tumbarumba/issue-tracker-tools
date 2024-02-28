@@ -1,32 +1,47 @@
 from __future__ import annotations
-from typing import List
+from typing import Dict, List
 from dateutil.tz import tzlocal
 import re
 import json
 import jsonpickle
 
+from ittools.config import JiraConfig
 from ittools.jira.jira_ext import JiraServer, JiraIssue
 
 
 class IssueDetailReport:
-    def __init__(self, jira: JiraServer, verbose: bool):
+    def __init__(self, jira_config: JiraConfig, jira: JiraServer, verbose: bool, summary: bool):
         self.jira = jira
-        self.verbose: bool = verbose
+        self.verbose = verbose
+        self.summary = summary
+        self.type_display: Dict[str, str] = {
+            issue_type["name"]: issue_type["display"]
+            for index, issue_type in enumerate(jira_config.issuetypes)
+        }
 
     def run(self, issue_keys: List[str]) -> None:
         try:
             for issue in self.jira.query_issue_keys(issue_keys):
-                self.report_issue_detail(issue)
-                print("")
+                self.report_issue(issue)
         except Exception as e:
             print(f"Failed: {e}")
 
-    def report_issue_detail(self, issue: JiraIssue):  # noqa: C901
+    def report_issue(self, issue: JiraIssue) -> None:
         if self.verbose:
             print(" json dump:")
             serialised = jsonpickle.encode(issue.raw_issue)
             print(json.dumps(json.loads(serialised), indent=2))
 
+        if self.summary:
+            self.report_issue_summary(issue)
+        else:
+            self.report_issue_detail(issue)
+
+    def report_issue_summary(self, issue: JiraIssue) -> None:
+        issue_icon = self.type_display[issue.issue_type]
+        print(f"{issue_icon} {issue.key}: {issue.summary}")
+
+    def report_issue_detail(self, issue: JiraIssue) -> None:  # noqa: C901
         is_epic = issue.issue_type == "Epic"
 
         print(f"{issue.key}: {issue.summary}")
@@ -98,13 +113,15 @@ class IssueDetailReport:
 
             for subtask in issue.raw_issue.fields.subtasks:
                 print("\n===\n")
-                self.report_issue_detail(subtask.key)
+                self.report_issue(subtask.key)
 
         if is_epic:
             print(" stories:")
             stories = self.jira.search_issues(f"'Epic Link' = {issue.key} order by key")
             for story in stories:
                 print(f"             {story.key}: {story.fields.summary}")
+
+        print("")
 
 
 def initials_for(full_name: str) -> str:
