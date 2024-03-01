@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from datetime import datetime
 from itertools import groupby
 from typing import Dict, List
@@ -20,6 +19,10 @@ class InProgressReport:
         self.status_display = {
             status["name"]: status["display"] for index, status in enumerate(opts.jira_config.statuses)
         }
+        self.person_team = {}
+        for team, people in opts.teams.items():
+            for person in people:
+                self.person_team[person] = team
 
     def run(self, group_by_epic: bool, group_by_team: bool) -> None:
         print("In progress report")
@@ -57,10 +60,9 @@ class InProgressReport:
     def report_issues_grouped_by_team(
         self, issues: List[JiraIssue]
     ) -> None:
-        epics = self.epics_for(issues)
-        sorted_issues = sorted(issues, key=lambda i: _team_for(i.epic_key, epics))
+        sorted_issues = sorted(issues, key=lambda issue: self.person_team.get(issue.assignee, "Unknown"))
         for team, team_issues in groupby(
-            sorted_issues, lambda issue: _team_for(issue.epic_key, epics) or ""
+            sorted_issues, lambda issue: self.person_team.get(issue.assignee, "Unknown")
         ):
             if team:
                 print(f"Team: {team}")
@@ -88,29 +90,3 @@ class InProgressReport:
         type_icon = self.type_display[issue.issue_type]
         status_icon = self.status_display[issue.status]
         print(f"{issue.duration:5.2f} {type_icon}{status_icon} {issue.key}: {issue.summary} ({issue.assignee})")
-
-
-def _team_for(epic_key: str, epics: Dict[str, JiraEpic]) -> str:
-    if epic_key in epics:
-        labels = epics[epic_key].labels
-        return _team_from_label_list(labels)
-    else:
-        return "Ω"  # Omega should sort last alphabetically
-
-
-def _team_from_label_list(labels: List[str]):
-    teams = [_team_from_label(label) for label in labels if label.startswith("Team")]
-    if len(teams) != 1:
-        # Multiple teams is the same as no team
-        return ""
-    return teams[0]
-
-
-team_pattern = re.compile(r"^Team(\w+)(_.*)?$")
-
-
-def _team_from_label(label: str) -> str | None:
-    match = team_pattern.match(label)
-    if match:
-        return match.group(1)
-    return None
