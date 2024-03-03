@@ -21,7 +21,8 @@ class IssueDetailReport:
 
     def run(self, issue_keys: List[str]) -> None:
         try:
-            for issue in self.jira.query_issue_keys(issue_keys):
+            issues = self.jira.query_issue_keys(issue_keys)
+            for issue in sorted(issues, key=lambda i: i.key):
                 self.report_issue(issue)
         except Exception as e:
             print(f"Failed: {e}")
