@@ -202,12 +202,24 @@ class JiraIssue(Issue):
         return self.raw_issue.raw["fields"][self.custom_fields["Epic Link"]]
 
     @property
+    def labels(self) -> List[str]:
+        return self.raw_issue.fields.labels
+
+    @property
+    def has_release_notes(self) -> bool:
+        return "ReleaseNotes" in self.labels
+
+    @property
     def rank(self) -> str:
         return self.raw_issue.raw["fields"][self.custom_fields["Rank"]]
 
     @property
     def url(self) -> str:
         return self.raw_issue.permalink()
+
+    @property
+    def description(self) -> str:
+        return self.raw_issue.fields.description
 
     @property
     def history(self) -> List[IssueState]:

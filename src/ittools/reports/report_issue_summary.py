@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import re
 from typing import Dict, List
 import sys
 import datetime
@@ -45,11 +47,11 @@ class Project:
 
 class IssueSummaryReport:
     def __init__(
-        self,
-        opts: ReportOptions,
-        jira: JiraServer,
-        show_stats: bool,
-        markdown: bool,
+            self,
+            opts: ReportOptions,
+            jira: JiraServer,
+            show_stats: bool,
+            markdown: bool,
     ):
         self.verbose: bool = opts.verbose
         self.show_stats: bool = show_stats
@@ -76,6 +78,11 @@ class IssueSummaryReport:
         for project_label in sorted(projects):
             self.report_project(projects[project_label])
 
+        if self.markdown:
+            issues_with_special_instructions = [issue for issue in report_issues if issue.has_release_notes]
+            if issues_with_special_instructions:
+                print_special_instructions(issues_with_special_instructions)
+
         if self.show_stats:
             all_durations = [issue.duration for issue in report_issues]
             self.print_heading_l1("All Projects")
@@ -92,12 +99,12 @@ class IssueSummaryReport:
             print(f" {total_count:3} (100%): Total")
 
     def build_projects(
-        self, report_issues: List[JiraIssue]
+            self, report_issues: List[JiraIssue]
     ) -> Dict[str, Project]:
         projects: Dict[str, Project] = {}
         report_issues.sort(key=lambda issue: issue.epic_key)
         for epic_key, epic_issues in groupby(
-            report_issues, lambda issue: issue.epic_key
+                report_issues, lambda issue: issue.epic_key
         ):
             epic: JiraEpic = self.jira.jira_epic(epic_key)
             project_label = _project_for(epic.labels)
@@ -142,9 +149,10 @@ class IssueSummaryReport:
 
     def print_issue(self, issue: JiraIssue) -> None:
         issue_icon = self.type_display[issue.issue_type]
+        release_notes_flag = _release_notes_flag(issue)
 
         if self.markdown:
-            print(f"* {issue_icon} [{issue.key}]({issue.url}): {issue.summary}")
+            print(f"* {issue_icon} [{issue.key}]({issue.url}): {issue.summary}{release_notes_flag}")
         else:
             if self.show_stats:
                 duration = f"{issue.duration:5.2f} "
@@ -173,6 +181,32 @@ def print_statistics(title: str, issues: List[JiraIssue]) -> None:
     print(f" total      : {total_time:7.2f} (100%)")
 
 
+def print_special_instructions(issues_with_special_instructions: List[JiraIssue]):
+    print("\n## <sup>¶</sup> Special Instructions\n")
+    for issue in issues_with_special_instructions:
+        print(f"### {issue.summary} ([{issue.key}]({issue.url}))")
+        print("")
+        print(_extract_special_instructions(issue))
+        print("")
+
+
+def _extract_special_instructions(issue: JiraIssue):
+    description = issue.description
+    if not re.search("release notes", description, re.IGNORECASE):
+        return description
+
+    # Only show text in the description after "Release Notes"
+    found_release_notes = False
+    instructions = ""
+    for line in description.splitlines(keepends=True):
+        if found_release_notes:
+            instructions += line
+        elif re.search("release notes", line, re.IGNORECASE):
+            found_release_notes = True
+
+    return instructions
+
+
 def _total_time_in_state(issues: List[JiraIssue], state_name: str) -> float:
     return sum(issue.time_in_state(state_name) for issue in issues)
 
@@ -186,3 +220,10 @@ def _project_for(labels: List[str]) -> str:
 
 def _is_project(label: str) -> bool:
     return "Team" not in label
+
+
+def _release_notes_flag(issue: JiraIssue):
+    if issue.has_release_notes:
+        return "<sup>¶</sup>"
+    else:
+        return ""

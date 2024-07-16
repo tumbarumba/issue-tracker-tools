@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import os
-import pkg_resources
 import sys
 import webbrowser
 from datetime import date
