@@ -32,21 +32,20 @@ python -m venv .venv
 Install the dependencies:
 
 ```
-pip install -r requirements.txt
+pip install -e '.[dev,test]'
 ```
 
-You can build and install the issue tracker tools by running the commands:
+Once installed locally, you can build a wheel for downstream distribution:
 
 ```
-python -m build
+hatch build
+```
+
+This will create a wheel file in the `dist` directory. This wheel can be
+installed in other environments using the normal installation:
+
+```
 pip install $(find dist -name "*.whl")
-```
-
-If you intend to make changes to the code, you should instead install
-the source code for direct use:
-
-```
-pip install --editable .
 ```
 
 ## Configuration

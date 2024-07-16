@@ -1,0 +1,77 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ittools"
+description = "Issue Tracker Tools - command line tools for interacting with issue trackers and to generate reports"
+readme = "README.md"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Topic :: Software Development :: Bug Tracking"
+]
+requires-python = '>=3.10'
+authors = [
+  {name = "Joe Schmetzer", email = "joe@exubero.com"}
+]
+dependencies = [
+  "click",
+  "jira",
+  "jsonpickle",
+  "pandas",
+  "python-dateutil",
+  "python-dotenv",
+  "pytz",
+  "PyYAML",
+  "matplotlib",
+  "numpy",
+  "yq"
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+  "hatch",
+  "uv",
+  "flake8"
+]
+test = [
+  "pytest",
+]
+
+[project.urls]
+Homepage = "https://github.com/tumbarumba/issue-tracker-tools"
+
+[project.scripts]
+it = "ittools.cli.it:issue_tracker"
+cfd = "ittools.cli.cfd:cfd"
+
+[tool.setuptools.packages.find]
+where = ["src/"]
+include = ["ittools"]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/ittools/_version.py"
+
+[tool.hatch.build.targets.sdist]
+packages = [
+  "/src/ittools"
+]
+
+[tool.pytest.ini_options]
+addopts = "-v"
+testpaths = ["src/"]
+log_cli = true
+log_cli_level = "INFO"
+filterwarnings = [
+  "ignore::DeprecationWarning:jira"
+]
+
+[tool.setuptools_scm]

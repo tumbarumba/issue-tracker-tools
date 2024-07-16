@@ -25,7 +25,7 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 def show_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    version = pkg_resources.require("issue-tracker-tools")[0].version
+    from ittools._version import version
     print(f"Issue tracker tools, version {version}")
     sys.exit(0)
 
