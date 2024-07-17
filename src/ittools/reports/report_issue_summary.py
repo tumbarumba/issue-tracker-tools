@@ -182,7 +182,9 @@ def print_statistics(title: str, issues: List[JiraIssue]) -> None:
 
 
 def print_special_instructions(issues_with_special_instructions: List[JiraIssue]):
-    print("\n## <sup>¶</sup> Special Instructions\n")
+    print("")
+    print("## <span id='special-release-instructions'>Special Release Instructions</span>")
+    print("")
     for issue in issues_with_special_instructions:
         print(f"### {issue.summary} ([{issue.key}]({issue.url}))")
         print("")
@@ -224,6 +226,6 @@ def _is_project(label: str) -> bool:
 
 def _release_notes_flag(issue: JiraIssue):
     if issue.has_release_notes:
-        return "<sup>¶</sup>"
+        return " (see [special release instructions](#special-release-instructions))"
     else:
         return ""
