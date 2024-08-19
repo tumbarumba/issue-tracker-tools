@@ -111,7 +111,6 @@ def add_fix_version(
             print(f"Failed to load details of issue with key {key}: {je.text}")
 
 
-
 @issue_tracker.command()
 @click.option(
     "-o", "--open", is_flag=True, default=False, help="Open issue in a web browser"
