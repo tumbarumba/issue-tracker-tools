@@ -6,6 +6,7 @@ from datetime import date
 from typing import List
 
 import click
+from jira.exceptions import JIRAError
 
 from ittools.cfd.cfd_db import store_project_counts
 from ittools.config import load_issue_tracker_config, ReportOptions
@@ -99,12 +100,16 @@ def add_fix_version(
     server: JiraServer, issue_keys: List[str], new_fix_version: str
 ) -> None:
     for key in issue_keys:
-        jira_issue = server.jira_issue(key)
-        if new_fix_version in jira_issue.fix_versions():
-            print(f"{jira_issue.key}: already assigned to {new_fix_version}")
-        else:
-            jira_issue.add_fix_version(new_fix_version)
-            print(f"{jira_issue.key}: added version {new_fix_version}")
+        try:
+            jira_issue = server.jira_issue(key)
+            if new_fix_version in jira_issue.fix_versions():
+                print(f"{jira_issue.key}: already assigned to {new_fix_version}")
+            else:
+                jira_issue.add_fix_version(new_fix_version)
+                print(f"{jira_issue.key}: added version {new_fix_version}")
+        except JIRAError as je:
+            print(f"Failed to load details of issue with key {key}: {je.text}")
+
 
 
 @issue_tracker.command()
