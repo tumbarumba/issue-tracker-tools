@@ -67,6 +67,7 @@ class CumulativeFlowGraph:
         self.png_file = png_file
         self.report_date = report_date
         self.trend_period = trend_period
+        self.initial_slope = project_config.initial_slope
 
     def run(self, verbose: bool, open_graph: bool):
         print(f"Cumulative Flow for project {self.project_config.name}")
@@ -122,8 +123,12 @@ class CumulativeFlowGraph:
         self.save_graph()
 
     def read_csv_values(self):
-        data_frame = pandas.read_csv(self.csv_file)
-        return FlowData(data_frame, self.report_date, self.trend_period)
+        data = pandas.read_csv(self.csv_file)
+        return FlowData(
+            data_frame=data,
+            today=self.report_date,
+            trend_period=self.trend_period,
+            initial_slope=self.initial_slope)
 
     def select_final_axis(self, flow_data):
         start_date = flow_data.dates[0]

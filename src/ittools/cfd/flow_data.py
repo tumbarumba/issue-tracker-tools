@@ -14,7 +14,10 @@ class FlowData:
     MINIMUM_TREND_SLOPE = 0.001
     DEFAULT_SLOPE = numpy.float64(1.0)
 
-    def __init__(self, data_frame: pandas.DataFrame, today: datetime.date, trend_period: int | None = None):
+    def __init__(self, data_frame: pandas.DataFrame,
+                 today: datetime.date,
+                 trend_period: int | None = None,
+                 initial_slope: float | None = None):
         self.today = today
         self.dates = self._load_dates(data_frame, today)
         self.pending = data_frame["pending"].tolist()[: len(self.dates)]
@@ -22,6 +25,7 @@ class FlowData:
         self.done = data_frame["done"].tolist()[: len(self.dates)]
         self.total = data_frame["total"].tolist()[: len(self.dates)]
         self.trend_period = trend_period or FlowData.DEFAULT_TREND_PERIOD
+        self.initial_slope = numpy.float64(initial_slope) if initial_slope else FlowData.DEFAULT_SLOPE
         self.slope_history = self._calculate_all_slopes()
         self.current_trend = self._calculate_current_trend()
         self.optimistic_trend = self._calculate_optimistic_trend()
@@ -44,7 +48,7 @@ class FlowData:
         regression_values = self.done[first_index : last_index + 1]  # noqa
 
         if len(regression_values) < 2:
-            return FlowData.DEFAULT_SLOPE
+            return self.initial_slope
 
         trend = calculate_trend_coefficients(regression_values)
         return trend.slope

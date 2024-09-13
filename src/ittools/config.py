@@ -18,9 +18,9 @@ DEFAULT_STATUSES = [
     {"display": "D", "name": "Duplicate"},
 ]
 DEFAULT_ISSUE_TYPES = [
-    {"display": "📖", "name": "Story"},
-    {"display": "🐞", "name": "Bug"},
-    {"display": "🔧", "name": "Task"},
+    {"display": "S", "name": "Story"},
+    {"display": "B", "name": "Bug"},
+    {"display": "T", "name": "Task"},
 ]
 
 
@@ -56,6 +56,7 @@ class ProjectConfig:
         self.name: str = project_config.get("name", "Unnamed Project")
         self.key: str = project_config.get("key", "(none)")
         self.milestones: List[Dict[str, Any]] = project_config.get("milestones", [])
+        self.initial_slope: float = project_config.get("initial_slope", 1.0)
 
 
 class ReportOptions(object):

@@ -21,6 +21,19 @@ def test_uniform_trend() -> None:
     assert_equal_trends(flow_data.pessimistic_trend, Trend(1.0, 0.0))
 
 
+def test_uniform_trend_override_initial_slope() -> None:
+    today = date(2023, 6, 30)
+    df = uniform_progress_df(today)
+
+    flow_data = FlowData(df, today, trend_period=16, initial_slope=5.0)
+
+    assert flow_data.pending == df["pending"].tolist()
+    assert math.isclose(flow_data.slope_history[0], 5.0)
+    assert math.isclose(flow_data.slope_history[1], 1.0)
+    assert math.isclose(flow_data.slope_history[-1], 1.0)
+    assert_equal_trends(flow_data.current_trend, Trend(1.0, 0.0))
+
+
 def test_increasing_trend() -> None:
     today = date(2023, 6, 30)
     df = increasing_progress_df(today)
@@ -51,95 +64,23 @@ def test_dates_after_today_are_excluded() -> None:
 
 def uniform_progress_df(final_date) -> pd.DataFrame:
     dates = date_array(final_date, 16)
-    return pd.DataFrame(
-        {
-            "date": dates,
-            "pending": [
-                19,
-                18,
-                17,
-                16,
-                15,
-                14,
-                13,
-                12,
-                11,
-                10,
-                9,
-                8,
-                7,
-                6,
-                5,
-                4,
-            ],  # noqa
-            "in_progress": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # noqa
-            "done": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],  # noqa
-            "total": [
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-                20,
-            ],  # noqa
-        }
+    return pd.DataFrame({
+        "date": dates,
+        "pending": [19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4],  # noqa
+        "in_progress": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # noqa
+        "done": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],  # noqa
+        "total": [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]} # noqa
     )
 
 
 def increasing_progress_df(final_date) -> pd.DataFrame:
     dates = date_array(final_date, 16)
-    return pd.DataFrame(
-        {
-            "date": dates,
-            "pending": [
-                99,
-                98,
-                97,
-                96,
-                95,
-                90,
-                85,
-                80,
-                75,
-                70,
-                65,
-                60,
-                55,
-                50,
-                45,
-                40,
-            ],  # noqa
-            "in_progress": [1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],  # noqa
-            "done": [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],  # noqa
-            "total": [
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-                100,
-            ],  # noqa
-        }
+    return pd.DataFrame({
+        "date": dates,
+        "pending": [99, 98, 97, 96, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50, 45, 40],  # noqa
+        "in_progress": [1, 1, 1, 1, 1, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],  # noqa
+        "done": [0, 1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55],  # noqa
+        "total": [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]}  # noqa
     )
 
 
