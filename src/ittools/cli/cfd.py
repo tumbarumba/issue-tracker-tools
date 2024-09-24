@@ -38,7 +38,14 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
     type=click.INT,
     help=f"Number of days to calculate trends (default: {FlowData.DEFAULT_TREND_PERIOD})",
 )
-@click.argument("project_label")
+@click.option(
+    "-p", "--project-label", "--project",
+    help="Project label",
+)
+@click.option(
+    "-e", "--epic",
+    help="Epic key",
+)
 def cfd(
     verbose: bool,
     config: click.Path,
@@ -46,6 +53,7 @@ def cfd(
     today: click.DateTime,
     days: click.INT,
     project_label: str,
+    epic: str,
 ) -> None:
     """Create a cumulative flow diagram for a given project
 
@@ -55,10 +63,17 @@ def cfd(
     it_config = make_it_config(verbose, config)
     project_config = make_project_config(verbose, it_config.report_dir, project_label)
     jira_server = JiraServer(verbose, it_config.jira_config)
-    project = Project.load(jira_server, project_label)
     report_date = date_option_or_today(today)
+    if project_label:
+        project = Project.load(jira_server, project_label)
+        png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
+    elif epic:
+        project = Project(epic, [jira_server.jira_epic(epic)])
+        png_file = f"{it_config.report_dir}/epics/cfd-{epic}-{str(report_date)}.png"
+    else:
+        ctx = click.get_current_context()
+        ctx.fail("one of project label or epic must be specified")
     epic_dir = f"{it_config.report_dir}/epics"
-    png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
     CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
 
 
