@@ -3,15 +3,19 @@ from __future__ import annotations
 import os
 import sys
 from datetime import datetime, timedelta
+from functools import reduce
 from math import ceil
 
 import matplotlib.patches as patches
 import matplotlib.pyplot as pyplot
 import pandas
 from matplotlib.lines import Line2D
+from pandas import DataFrame
 
 from ittools.config import ProjectConfig
 from .flow_data import FlowData
+from ..domain.epic import Epic
+from ..domain.project import Project
 
 colour_schemes = {
     "sunset": {
@@ -56,14 +60,16 @@ colour_schemes = {
 class CumulativeFlowGraph:
     def __init__(
         self,
+        epic_dir: str,
         project_config: ProjectConfig,
-        csv_file: str,
+        project: Project,
         png_file: str,
         report_date: datetime.date,
         trend_period: int,
     ):
+        self.epic_dir = epic_dir
         self.project_config = project_config
-        self.csv_file = csv_file
+        self.project = project
         self.png_file = png_file
         self.report_date = report_date
         self.trend_period = trend_period
@@ -72,9 +78,7 @@ class CumulativeFlowGraph:
     def run(self, verbose: bool, open_graph: bool):
         print(f"Cumulative Flow for project {self.project_config.name}")
         print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-        if verbose:
-            print(f"Reading flow data from '{self.csv_file}'")
-        flow_data = self.read_csv_values()
+        flow_data = self.load_flow_data(verbose)
         print(f"  remaining issues: {flow_data.total[-1] - flow_data.done[-1]}")
         print("  trends (issues/day):")
         print(f"    current     {flow_data.current_trend.slope:4.1f}")
@@ -122,13 +126,24 @@ class CumulativeFlowGraph:
 
         self.save_graph()
 
-    def read_csv_values(self):
-        data = pandas.read_csv(self.csv_file)
+    def load_flow_data(self, verbose: bool):
+        epic_datas = [self._load_epic_data(epic, verbose) for epic in self.project.epics]
+        project_data = reduce(CumulativeFlowGraph._combine_progress_data, epic_datas)
         return FlowData(
-            data_frame=data,
+            data_frame=project_data,
             today=self.report_date,
             trend_period=self.trend_period,
             initial_slope=self.initial_slope)
+
+    def _load_epic_data(self, epic: Epic, verbose: bool) -> DataFrame:
+        csv_file = f"{self.epic_dir}/{epic.key}.csv"
+        if verbose:
+            print(f"Reading progress from {csv_file}")
+        return pandas.read_csv(csv_file, usecols=["date", "pending", "in_progress", "done", "total"], index_col="date")
+
+    @classmethod
+    def _combine_progress_data(cls, left: DataFrame, right: DataFrame) -> DataFrame:
+        return left.combine(right, lambda left_cell, right_cell: left_cell + right_cell, fill_value=0)
 
     def select_final_axis(self, flow_data):
         start_date = flow_data.dates[0]

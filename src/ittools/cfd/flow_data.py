@@ -32,7 +32,7 @@ class FlowData:
         self.pessimistic_trend = self._calculate_pessimistic_trend()
 
     def _load_dates(self, data_frame, last_date):
-        all_dates = [isoparse(date_str).date() for date_str in data_frame["date"]]
+        all_dates = [isoparse(date_str).date() for date_str in data_frame.index]
         last_index = all_dates.index(last_date)
         return all_dates[: last_index + 1]
 

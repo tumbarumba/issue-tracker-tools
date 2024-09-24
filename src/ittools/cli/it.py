@@ -150,14 +150,14 @@ def issue(
 
 
 @issue_tracker.command()
-@click.argument("project")
+@click.argument("project_label")
 @click.pass_context
-def project(ctx: click.Context, project: str) -> None:
+def project(ctx: click.Context, project_label: str) -> None:
     """Report on progress for a project."""
     options: ReportOptions = ctx.obj
     report_date = str(date.today())
     jira_server = JiraServer(options.verbose, options.jira_config)
-    project_data = Project.load(jira_server, project)
+    project_data = Project.load(jira_server, project_label)
     ProjectReport(project_data).run(report_date)
     store_project_counts(report_date, project_data, options)
 

@@ -8,7 +8,8 @@ import sys
 from ittools.cfd.flow_data import FlowData
 from ittools.config import load_issue_tracker_config, load_project_config, IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
-
+from ittools.domain.project import Project
+from ittools.jira.jira_ext import JiraServer
 
 DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
@@ -37,14 +38,14 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
     type=click.INT,
     help=f"Number of days to calculate trends (default: {FlowData.DEFAULT_TREND_PERIOD})",
 )
-@click.argument("project")
+@click.argument("project_label")
 def cfd(
     verbose: bool,
     config: click.Path,
     open_graph: bool,
     today: click.DateTime,
     days: click.INT,
-    project: str,
+    project_label: str,
 ) -> None:
     """Create a cumulative flow diagram for a given project
 
@@ -52,11 +53,13 @@ def cfd(
     by the `it project` command
     """
     it_config = make_it_config(verbose, config)
-    project_config = make_project_config(verbose, it_config.report_dir, project)
+    project_config = make_project_config(verbose, it_config.report_dir, project_label)
+    jira_server = JiraServer(verbose, it_config.jira_config)
+    project = Project.load(jira_server, project_label)
     report_date = date_option_or_today(today)
-    csv_file = f"{it_config.report_dir}/{project}/progress.csv"
-    png_file = f"{it_config.report_dir}/{project}/cfd-{str(report_date)}.png"
-    CumulativeFlowGraph(project_config, csv_file, png_file, report_date, days).run(verbose, open_graph)
+    epic_dir = f"{it_config.report_dir}/epics"
+    png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
+    CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
 
 
 def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:

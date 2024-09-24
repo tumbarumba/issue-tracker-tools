@@ -3,36 +3,37 @@ from unittest.mock import Mock
 
 from ittools.config import ReportOptions
 from ittools.cfd.cfd_db import store_project_counts
+from ittools.domain.epic import Epic
 from ittools.domain.issue_counts import IssueCounts
 from ittools.domain.project import Project
 
 
 def test_csv_created_when_missing(tmp_path):
     options = mock_options(tmp_path)
-    project = mock_project("test_project", IssueCounts(1, 1, 1))
-    csv_path = tmp_path / "test_project" / "progress.csv"
+    project = mock_project("test_project", [mock_epic("DS-1111", IssueCounts(1, 1, 1))])
+    csv_path = tmp_path / "epics" / "DS-1111.csv"
 
     store_project_counts("2022-08-16", project, options)
 
     assert csv_path.exists()
     assert csv_path.read_text() == textwrap.dedent(
         """\
-        date,project,pending,in_progress,done,total
-        2022-08-16,test_project,1,1,1,3
+        date,epic,pending,in_progress,done,total
+        2022-08-16,DS-1111,1,1,1,3
         """
     )
 
 
 def test_csv_appended_when_already_present(tmp_path):
     options = mock_options(tmp_path)
-    project = mock_project("test_project", IssueCounts(1, 1, 1))
-    csv_path = tmp_path / "test_project" / "progress.csv"
+    project = mock_project("test_project", [mock_epic("DS-2222", IssueCounts(1, 1, 1))])
+    csv_path = tmp_path / "epics" / "DS-2222.csv"
     setup_initial_csv(
         csv_path,
         textwrap.dedent(
             """\
-        date,project,pending,in_progress,done,total
-        2022-08-15,test_project,1,2,0,3
+        date,epic,pending,in_progress,done,total
+        2022-08-15,DS-2222,1,2,0,3
         """
         ),
     )
@@ -41,23 +42,23 @@ def test_csv_appended_when_already_present(tmp_path):
 
     assert csv_path.read_text() == textwrap.dedent(
         """\
-        date,project,pending,in_progress,done,total
-        2022-08-15,test_project,1,2,0,3
-        2022-08-16,test_project,1,1,1,3
+        date,epic,pending,in_progress,done,total
+        2022-08-15,DS-2222,1,2,0,3
+        2022-08-16,DS-2222,1,1,1,3
         """
     )
 
 
 def test_csv_fills_in_missing_dates(tmp_path):
     options = mock_options(tmp_path)
-    project = mock_project("test_project", IssueCounts(1, 1, 1))
-    csv_path = tmp_path / "test_project" / "progress.csv"
+    project = mock_project("test_project", [mock_epic("DS-3333", IssueCounts(1, 1, 1))])
+    csv_path = tmp_path / "epics" / "DS-3333.csv"
     setup_initial_csv(
         csv_path,
         textwrap.dedent(
             """\
         date,project,pending,in_progress,done,total
-        2022-08-13,test_project,1,2,0,3
+        2022-08-13,DS-3333,1,2,0,3
         """
         ),
     )
@@ -66,11 +67,11 @@ def test_csv_fills_in_missing_dates(tmp_path):
 
     assert csv_path.read_text() == textwrap.dedent(
         """\
-        date,project,pending,in_progress,done,total
-        2022-08-13,test_project,1,2,0,3
-        2022-08-14,test_project,1,2,0,3
-        2022-08-15,test_project,1,2,0,3
-        2022-08-16,test_project,1,1,1,3
+        date,epic,pending,in_progress,done,total
+        2022-08-13,DS-3333,1,2,0,3
+        2022-08-14,DS-3333,1,2,0,3
+        2022-08-15,DS-3333,1,2,0,3
+        2022-08-16,DS-3333,1,1,1,3
         """
     )
 
@@ -81,10 +82,18 @@ def setup_initial_csv(csv_path, content):
         f.write(content)
 
 
-def mock_project(key: str, issue_counts: IssueCounts) -> Project:
+def mock_epic(key: str, issue_counts: IssueCounts) -> Epic:
+    epic = Mock(spec=Epic)
+    epic.key = key
+    epic.issue_counts = issue_counts
+    return epic
+
+
+def mock_project(key: str, epics: list[Epic]) -> Project:
     project = Mock(spec=Project)
     project.key = key
-    project.issue_counts = issue_counts
+    project.epics = epics
+    # project.issue_counts = issue_counts
     return project
 
 

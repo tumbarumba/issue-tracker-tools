@@ -6,29 +6,37 @@ from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 
 from ittools.config import ReportOptions
+from ittools.domain.epic import Epic
 from ittools.domain.issue_counts import IssueCounts
 from ittools.domain.project import Project
 
-PROJECT_PROGRESS_CSV = "progress.csv"
+PROGRESS_CSV = "progress.csv"
 
 
 def store_project_counts(
     count_date: str, project: Project, options: ReportOptions
 ) -> None:
-    progress_csv_path = get_progress_csv_path(options, project.key)
-    csv_data = read_csv_data(progress_csv_path)
+    for epic in project.epics:
+        store_epic_counts(count_date, epic, options)
+
+
+def store_epic_counts(
+    count_date: str, epic: Epic, options: ReportOptions
+) -> None:
+    csv_path = get_epic_progress_csv_path(options, epic.key)
+    csv_data = read_csv_data(csv_path)
     add_missing_dates(csv_data, count_date)
-    csv_data[count_date] = project.issue_counts
-    write_csv_data(progress_csv_path, project.key, csv_data)
+    csv_data[count_date] = epic.issue_counts
+    write_csv_data(csv_path, epic.key, csv_data)
 
 
-def get_progress_csv_path(options: ReportOptions, project_key: str) -> Path:
+def get_epic_progress_csv_path(options: ReportOptions, epic_key: str) -> Path:
     report_path = Path(options.report_dir)
-    project_report_path = report_path / project_key
-    if not project_report_path.exists():
-        print(f"Making directory {str(project_report_path)}")
-        project_report_path.mkdir(parents=True, exist_ok=True)
-    return project_report_path / PROJECT_PROGRESS_CSV
+    epic_report_path = report_path / "epics"
+    if not epic_report_path.exists():
+        print(f"Making directory {str(epic_report_path)}")
+        epic_report_path.mkdir(parents=True, exist_ok=True)
+    return epic_report_path / f"{epic_key}.csv"
 
 
 def read_csv_data(csv_path: Path) -> Dict[str, IssueCounts]:
@@ -51,10 +59,10 @@ def counts_from_row(row: Dict[str, str]) -> IssueCounts:
 
 
 def write_csv_data(
-    csv_path: Path, project_key: str, csv_data: Dict[str, IssueCounts]
+    csv_path: Path, epic_key: str, csv_data: Dict[str, IssueCounts]
 ) -> None:
     with csv_path.open("w", encoding="UTF8") as f:
-        field_names = ["date", "project", "pending", "in_progress", "done", "total"]
+        field_names = ["date", "epic", "pending", "in_progress", "done", "total"]
         csv_writer = csv.DictWriter(f, fieldnames=field_names)
         csv_writer.writeheader()
         for key in sorted(csv_data.keys()):
@@ -62,7 +70,7 @@ def write_csv_data(
             csv_writer.writerow(
                 {
                     "date": key,
-                    "project": project_key,
+                    "epic": epic_key,
                     "pending": counts.pending,
                     "in_progress": counts.in_progress,
                     "done": counts.done,
