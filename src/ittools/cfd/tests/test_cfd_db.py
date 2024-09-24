@@ -11,7 +11,7 @@ from ittools.domain.project import Project
 def test_csv_created_when_missing(tmp_path):
     options = mock_options(tmp_path)
     project = mock_project("test_project", [mock_epic("DS-1111", IssueCounts(1, 1, 1))])
-    csv_path = tmp_path / "epics" / "DS-1111.csv"
+    csv_path = tmp_path / "epics" / "DS-1111" / "progress.csv"
 
     store_project_counts("2022-08-16", project, options)
 
@@ -27,7 +27,7 @@ def test_csv_created_when_missing(tmp_path):
 def test_csv_appended_when_already_present(tmp_path):
     options = mock_options(tmp_path)
     project = mock_project("test_project", [mock_epic("DS-2222", IssueCounts(1, 1, 1))])
-    csv_path = tmp_path / "epics" / "DS-2222.csv"
+    csv_path = tmp_path / "epics" / "DS-2222" / "progress.csv"
     setup_initial_csv(
         csv_path,
         textwrap.dedent(
@@ -52,7 +52,7 @@ def test_csv_appended_when_already_present(tmp_path):
 def test_csv_fills_in_missing_dates(tmp_path):
     options = mock_options(tmp_path)
     project = mock_project("test_project", [mock_epic("DS-3333", IssueCounts(1, 1, 1))])
-    csv_path = tmp_path / "epics" / "DS-3333.csv"
+    csv_path = tmp_path / "epics" / "DS-3333" / "progress.csv"
     setup_initial_csv(
         csv_path,
         textwrap.dedent(

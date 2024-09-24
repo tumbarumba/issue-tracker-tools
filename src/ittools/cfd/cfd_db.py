@@ -32,11 +32,11 @@ def store_epic_counts(
 
 def get_epic_progress_csv_path(options: ReportOptions, epic_key: str) -> Path:
     report_path = Path(options.report_dir)
-    epic_report_path = report_path / "epics"
+    epic_report_path = report_path / "epics" / epic_key
     if not epic_report_path.exists():
         print(f"Making directory {str(epic_report_path)}")
         epic_report_path.mkdir(parents=True, exist_ok=True)
-    return epic_report_path / f"{epic_key}.csv"
+    return epic_report_path / PROGRESS_CSV
 
 
 def read_csv_data(csv_path: Path) -> Dict[str, IssueCounts]:

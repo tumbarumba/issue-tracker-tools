@@ -69,7 +69,7 @@ def cfd(
         png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
     elif epic:
         project = Project(epic, [jira_server.jira_epic(epic)])
-        png_file = f"{it_config.report_dir}/epics/cfd-{epic}-{str(report_date)}.png"
+        png_file = f"{it_config.report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
     else:
         ctx = click.get_current_context()
         ctx.fail("one of project label or epic must be specified")

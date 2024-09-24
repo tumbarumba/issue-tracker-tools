@@ -60,14 +60,14 @@ colour_schemes = {
 class CumulativeFlowGraph:
     def __init__(
         self,
-        epic_dir: str,
+        epics_dir: str,
         project_config: ProjectConfig,
         project: Project,
         png_file: str,
         report_date: datetime.date,
         trend_period: int,
     ):
-        self.epic_dir = epic_dir
+        self.epics_dir = epics_dir
         self.project_config = project_config
         self.project = project
         self.png_file = png_file
@@ -136,7 +136,7 @@ class CumulativeFlowGraph:
             initial_slope=self.initial_slope)
 
     def _load_epic_data(self, epic: Epic, verbose: bool) -> DataFrame:
-        csv_file = f"{self.epic_dir}/{epic.key}.csv"
+        csv_file = f"{self.epics_dir}/{epic.key}/progress.csv"
         if verbose:
             print(f"Reading progress from {csv_file}")
         return pandas.read_csv(csv_file, usecols=["date", "pending", "in_progress", "done", "total"], index_col="date")
