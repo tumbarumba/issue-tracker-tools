@@ -63,19 +63,27 @@ def cfd(
     it_config = make_it_config(verbose, config)
     jira_server = JiraServer(verbose, it_config.jira_config)
     report_date = date_option_or_today(today)
-    if project_label:
-        project_config = make_project_config(verbose, it_config.report_dir, project_label)
-        project = Project.load(jira_server, project_label)
-        png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
-    elif epic:
-        jira_epic = jira_server.jira_epic(epic)
-        project_config = make_project_config(verbose, it_config.report_dir, f"{epic}: {jira_epic.summary}")
-        project = Project(epic, [jira_epic])
-        png_file = f"{it_config.report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
-    else:
-        ctx = click.get_current_context()
-        ctx.fail("one of project label or epic must be specified")
     epic_dir = f"{it_config.report_dir}/epics"
+    if project_label:
+        _make_project_cfd(days, epic_dir, it_config, jira_server, open_graph, project_label, report_date, verbose)
+    elif epic:
+        _make_epic_cfd(days, epic, epic_dir, it_config, jira_server, open_graph, report_date, verbose)
+    else:
+        click.get_current_context().fail("one of project label or epic must be specified")
+
+
+def _make_project_cfd(days, epic_dir, it_config, jira_server, open_graph, project_label, report_date, verbose):
+    project_config = make_project_config(verbose, it_config.report_dir, project_label)
+    project = Project.load(jira_server, project_label)
+    png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
+    CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
+
+
+def _make_epic_cfd(days, epic, epic_dir, it_config, jira_server, open_graph, report_date, verbose):
+    jira_epic = jira_server.jira_epic(epic)
+    project_config = make_project_config(verbose, it_config.report_dir, f"{epic}: {jira_epic.summary}")
+    project = Project(epic, [jira_epic])
+    png_file = f"{it_config.report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
     CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
 
 
