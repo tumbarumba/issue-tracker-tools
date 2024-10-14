@@ -61,14 +61,16 @@ def cfd(
     by the `it project` command
     """
     it_config = make_it_config(verbose, config)
-    project_config = make_project_config(verbose, it_config.report_dir, project_label)
     jira_server = JiraServer(verbose, it_config.jira_config)
     report_date = date_option_or_today(today)
     if project_label:
+        project_config = make_project_config(verbose, it_config.report_dir, project_label)
         project = Project.load(jira_server, project_label)
         png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
     elif epic:
-        project = Project(epic, [jira_server.jira_epic(epic)])
+        jira_epic = jira_server.jira_epic(epic)
+        project_config = make_project_config(verbose, it_config.report_dir, f"{epic}: {jira_epic.summary}")
+        project = Project(epic, [jira_epic])
         png_file = f"{it_config.report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
     else:
         ctx = click.get_current_context()
