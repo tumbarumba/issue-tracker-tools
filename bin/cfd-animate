@@ -10,19 +10,16 @@ set -e
 project_config=$1
 cfd_dir=$(dirname $project_config)
 project_label=$(python -m yq -r .project.label $project_config)
-csv_file="$cfd_dir/progress.csv"
 
-echo "Reading data from $csv_file"
-
-first_date=$(cat $csv_file | head -2 | tail -1 | cut --delimiter="," -f 1)
-last_date=$(cat $csv_file | tail -1 | cut --delimiter="," -f 1)
+first_date=$(cfd --project "$project_label" --show-first-date)
+last_date=$(cfd --project "$project_label" --show-last-date)
 stop_date=$(date -I -d "$last_date + 1 day")
 
 d=$first_date
 while [ "$d" != "$stop_date" ]; do
     output_file="$cfd_dir/cfd-$d.png"
     if [ ! -f $output_file ]; then
-        cfd -t $d "$project_label"
+        cfd -t $d -p "$project_label"
     fi
     d=$(date -I -d "$d + 1 day")
 done
@@ -30,7 +27,7 @@ done
 animation=$cfd_dir/cfd-anim-$last_date.gif
 echo "Creating animation $animation"
 
-convert -loop 0 -delay 20 $cfd_dir/cfd-*.png -delay 280 $cfd_dir/cfd-$last_date.png $animation
+magick -loop 0 -delay 20 $cfd_dir/cfd-*.png -delay 280 $cfd_dir/cfd-$last_date.png $animation
 mogrify -layers optimize $animation
 
 echo "Done"

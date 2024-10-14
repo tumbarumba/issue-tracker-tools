@@ -332,3 +332,11 @@ class CumulativeFlowGraph:
         """saves graph, creates file locations if necessary"""
         pyplot.savefig(self.png_file)
         print(f"Cumulative flow graph saved as {self.png_file}")
+
+    def first_data_date(self, verbose: bool) -> str:
+        flow_data = self.load_flow_data(verbose)
+        return flow_data.dates[0]
+
+    def last_data_date(self, verbose: bool) -> str:
+        flow_data = self.load_flow_data(verbose)
+        return flow_data.dates[-1]

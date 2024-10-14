@@ -46,6 +46,8 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
     "-e", "--epic",
     help="Epic key",
 )
+@click.option("-f", "--show-first-date", is_flag=True, help="Show first date in report data")
+@click.option("-l", "--show-last-date", is_flag=True, help="Show last date in report data")
 def cfd(
     verbose: bool,
     config: click.Path,
@@ -54,37 +56,51 @@ def cfd(
     days: click.INT,
     project_label: str,
     epic: str,
+    show_first_date: bool,
+    show_last_date: bool
 ) -> None:
     """Create a cumulative flow diagram for a given project
 
     Requires a project progress file (progress.csv) in the project directory. This is normally generated
     by the `it project` command
     """
+    if not (project_label or epic):
+        click.get_current_context().fail("one of project label or epic must be specified")
+    if project_label and epic:
+        click.get_current_context().fail("only one of project label or epic can be specified")
+
+    cfd_report = _make_cfd_report(config, days, epic, project_label, today, verbose)
+    if show_first_date:
+        print(cfd_report.first_data_date(verbose))
+    elif show_last_date:
+        print(cfd_report.last_data_date(verbose))
+    else:
+        cfd_report.run(verbose, open_graph)
+
+
+def _make_cfd_report(config, days, epic, project_label, today, verbose):
     it_config = make_it_config(verbose, config)
     jira_server = JiraServer(verbose, it_config.jira_config)
     report_date = date_option_or_today(today)
-    epic_dir = f"{it_config.report_dir}/epics"
     if project_label:
-        _make_project_cfd(days, epic_dir, it_config, jira_server, open_graph, project_label, report_date, verbose)
-    elif epic:
-        _make_epic_cfd(days, epic, epic_dir, it_config, jira_server, open_graph, report_date, verbose)
+        return _make_project_cfd(project_label, days, it_config.report_dir, jira_server, report_date, verbose)
     else:
-        click.get_current_context().fail("one of project label or epic must be specified")
+        return _make_epic_cfd(epic, days, it_config.report_dir, jira_server, report_date, verbose)
 
 
-def _make_project_cfd(days, epic_dir, it_config, jira_server, open_graph, project_label, report_date, verbose):
-    project_config = make_project_config(verbose, it_config.report_dir, project_label)
+def _make_project_cfd(project_label, days, report_dir, jira_server, report_date, verbose) -> CumulativeFlowGraph:
+    project_config = make_project_config(verbose, report_dir, project_label)
     project = Project.load(jira_server, project_label)
-    png_file = f"{it_config.report_dir}/{project_label}/cfd-{str(report_date)}.png"
-    CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
+    png_file = f"{report_dir}/{project_label}/cfd-{str(report_date)}.png"
+    return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, days)
 
 
-def _make_epic_cfd(days, epic, epic_dir, it_config, jira_server, open_graph, report_date, verbose):
+def _make_epic_cfd(epic, days, report_dir, jira_server, report_date, verbose) -> CumulativeFlowGraph:
     jira_epic = jira_server.jira_epic(epic)
-    project_config = make_project_config(verbose, it_config.report_dir, f"{epic}: {jira_epic.summary}")
+    project_config = make_project_config(verbose, report_dir, f"{epic}: {jira_epic.summary}")
     project = Project(epic, [jira_epic])
-    png_file = f"{it_config.report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
-    CumulativeFlowGraph(epic_dir, project_config, project, png_file, report_date, days).run(verbose, open_graph)
+    png_file = f"{report_dir}/epics/{epic}/cfd-{str(report_date)}.png"
+    return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, days)
 
 
 def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
