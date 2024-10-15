@@ -75,7 +75,7 @@ class CumulativeFlowGraph:
         self.trend_period = trend_period
         self.initial_slope = project_config.initial_slope
 
-    def run(self, verbose: bool, open_graph: bool):
+    def run(self, verbose: bool):
         print(f"Cumulative Flow for project {self.project_config.name}")
         print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
         flow_data = self.load_flow_data(verbose)
@@ -96,9 +96,6 @@ class CumulativeFlowGraph:
             print("\nTrend history:")
             for (date, slope) in zip(flow_data.dates[-len(flow_data.slope_history):], flow_data.slope_history):
                 print(f"  {date}: {slope:4.1f}")
-
-        if open_graph:
-            os.system(f"xdg-open '{self.png_file}'")
 
     def build_graph(self, flow_data):
         colours = colour_schemes["default"]

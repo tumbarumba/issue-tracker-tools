@@ -15,15 +15,6 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
-@click.option("-v", "--verbose", is_flag=True)
-@click.option("-c", "--config", type=click.Path(exists=True))
-@click.option(
-    "-o",
-    "--open-graph",
-    is_flag=True,
-    default=False,
-    help="Open the graph after generation",
-)
 @click.option(
     "-t",
     "--today",
@@ -38,26 +29,23 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
     type=click.INT,
     help=f"Number of days to calculate trends (default: {FlowData.DEFAULT_TREND_PERIOD})",
 )
-@click.option(
-    "-p", "--project-label", "--project",
-    help="Project label",
-)
-@click.option(
-    "-e", "--epic",
-    help="Epic key",
-)
+@click.option("-p", "--project-label", "--project", help="Project label")
+@click.option("-e", "--epic", help="Epic key")
 @click.option("-f", "--show-first-date", is_flag=True, help="Show first date in report data")
 @click.option("-l", "--show-last-date", is_flag=True, help="Show last date in report data")
+@click.option("-c", "--config", type=click.Path(exists=True))
+@click.option("-o", "--open-graph", is_flag=True, default=False, help="Open the graph after generation")
+@click.option("-v", "--verbose", is_flag=True, help="Show extra information from report")
 def cfd(
-    verbose: bool,
-    config: click.Path,
-    open_graph: bool,
     today: click.DateTime,
     days: click.INT,
     project_label: str,
     epic: str,
     show_first_date: bool,
-    show_last_date: bool
+    show_last_date: bool,
+    config: click.Path,
+    open_graph: bool,
+    verbose: bool
 ) -> None:
     """Create a cumulative flow diagram for a given project
 
@@ -75,7 +63,9 @@ def cfd(
     elif show_last_date:
         print(cfd_report.last_data_date(verbose))
     else:
-        cfd_report.run(verbose, open_graph)
+        cfd_report.run(verbose)
+        if open_graph:
+            os.system(f"xdg-open '{cfd_report.png_file}'")
 
 
 def _make_cfd_report(config, days, epic, project_label, today, verbose):
