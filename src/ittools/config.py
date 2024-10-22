@@ -18,9 +18,9 @@ DEFAULT_STATUSES = [
     {"display": "D", "name": "Duplicate"},
 ]
 DEFAULT_ISSUE_TYPES = [
-    {"display": "S", "name": "Story"},
-    {"display": "B", "name": "Bug"},
-    {"display": "T", "name": "Task"},
+    {"display": "📖", "name": "Story"},
+    {"display": "🐞", "name": "Bug"},
+    {"display": "🔧", "name": "Task"},
 ]
 
 
