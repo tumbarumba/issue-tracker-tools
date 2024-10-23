@@ -1,8 +1,8 @@
-from ittools.config import load_issue_tracker_config
+from ittools.config import IssueTrackerConfig
 
 
 def test_load_config():
-    config = load_issue_tracker_config("example/issuetracker.yml")
+    config = IssueTrackerConfig.load("example/issuetracker.yml")
 
     assert config.jira_config.url == "https://url.of.jira/"
     assert len(config.jira_config.statuses) == 10

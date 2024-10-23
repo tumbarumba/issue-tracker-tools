@@ -6,7 +6,7 @@ import datetime
 import sys
 
 from ittools.cfd.flow_data import FlowData
-from ittools.config import load_issue_tracker_config, load_project_config, IssueTrackerConfig, ProjectConfig
+from ittools.config import IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
 from ittools.domain.project import Project
 from ittools.jira.jira_ext import JiraServer
@@ -76,9 +76,9 @@ def _make_cfd_report(
         today: click.DateTime,
         verbose: bool
 ) -> CumulativeFlowGraph:
-    config = make_it_config(verbose, config_path)
+    config = _make_it_config(verbose, config_path)
     jira_server = JiraServer(verbose, config.jira_config)
-    report_date = date_option_or_today(today)
+    report_date = _date_option_or_today(today)
     if project_label:
         return _make_project_cfd(project_label, trend_period, config.report_dir, jira_server, report_date, verbose)
     else:
@@ -93,7 +93,7 @@ def _make_project_cfd(
         report_date: datetime.date,
         verbose: bool
 ) -> CumulativeFlowGraph:
-    project_config = make_project_config(verbose, report_dir, project_label)
+    project_config = _make_project_config(verbose, report_dir, project_label)
     project = Project.load(jira_server, project_label)
     png_file = f"{report_dir}/{project_label}/cfd-{str(report_date)}.png"
     return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, trend_period)
@@ -108,32 +108,32 @@ def _make_epic_cfd(
         verbose: bool
 ) -> CumulativeFlowGraph:
     jira_epic = jira_server.jira_epic(epic_key)
-    project_config = make_project_config(verbose, report_dir, f"{epic_key}: {jira_epic.summary}")
+    project_config = _make_project_config(verbose, report_dir, f"{epic_key}: {jira_epic.summary}")
     project = Project(epic_key, [jira_epic])
     png_file = f"{report_dir}/epics/{epic_key}/cfd-{str(report_date)}.png"
     return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, trend_period)
 
 
-def make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
+def _make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
     config_file = config_file or os.path.expanduser(DEFAULT_CONFIG_FILE)
     if verbose:
         print(f"Using issue tracker config file '{config_file}'")
-    return load_issue_tracker_config(config_file)
+    return IssueTrackerConfig.load(config_file)
 
 
-def make_project_config(verbose: bool, report_dir: str, project_label: str) -> ProjectConfig:
+def _make_project_config(verbose: bool, report_dir: str, project_label: str) -> ProjectConfig:
     config_file = f"{report_dir}/{project_label}/project.yml"
     if os.path.isfile(config_file):
         if verbose:
             print(f"Using project config file '{config_file}'")
-        return load_project_config(config_file)
+        return ProjectConfig.load(config_file)
     else:
         if verbose:
             print(f"Project config file missing ('{config_file}'), using default")
         return ProjectConfig({"name": project_label, "key": project_label, })
 
 
-def date_option_or_today(option: click.DateTime) -> datetime.date:
+def _date_option_or_today(option: click.DateTime) -> datetime.date:
     if option:
         return option.date()
     return datetime.date.today()

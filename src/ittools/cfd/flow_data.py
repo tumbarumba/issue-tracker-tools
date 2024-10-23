@@ -25,13 +25,14 @@ class FlowData:
         self.done = data_frame["done"].tolist()[: len(self.dates)]
         self.total = data_frame["total"].tolist()[: len(self.dates)]
         self.trend_period = trend_period or FlowData.DEFAULT_TREND_PERIOD
-        self.initial_slope = numpy.float64(initial_slope) if initial_slope else FlowData.DEFAULT_SLOPE
+        self._initial_slope = numpy.float64(initial_slope) if initial_slope else FlowData.DEFAULT_SLOPE
         self.slope_history = self._calculate_all_slopes()
         self.current_trend = self._calculate_current_trend()
         self.optimistic_trend = self._calculate_optimistic_trend()
         self.pessimistic_trend = self._calculate_pessimistic_trend()
 
-    def _load_dates(self, data_frame, last_date):
+    @staticmethod
+    def _load_dates(data_frame, last_date) -> list[datetime.date]:
         all_dates = [isoparse(date_str).date() for date_str in data_frame.index]
         last_index = all_dates.index(last_date)
         return all_dates[: last_index + 1]
@@ -48,24 +49,24 @@ class FlowData:
         regression_values = self.done[first_index : last_index + 1]  # noqa
 
         if len(regression_values) < 2:
-            return self.initial_slope
+            return self._initial_slope
 
         trend = calculate_trend_coefficients(regression_values)
         return trend.slope
 
-    def _calculate_current_trend(self):
+    def _calculate_current_trend(self) -> Trend:
         current_slope = self.slope_history[-1]
         return Trend(current_slope, self._calculate_implied_y_intercept(current_slope))
 
-    def _calculate_optimistic_trend(self):
+    def _calculate_optimistic_trend(self) -> Trend:
         optimistic_slope = max(self.slope_history)
         return Trend(optimistic_slope, self._calculate_implied_y_intercept(optimistic_slope))
 
-    def _calculate_pessimistic_trend(self):
+    def _calculate_pessimistic_trend(self) -> Trend:
         pessimistic_slope = min(self.slope_history)
         return Trend(pessimistic_slope, self._calculate_implied_y_intercept(pessimistic_slope))
 
-    def _calculate_implied_y_intercept(self, slope: float):
+    def _calculate_implied_y_intercept(self, slope: float) -> float:
         """Force the calculated value of today's done to match the actual value by adjusting the intercept"""
         index_today = (self.today - self.dates[0]).days
         done_today = self.done[index_today]

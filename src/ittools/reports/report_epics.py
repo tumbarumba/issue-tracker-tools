@@ -8,12 +8,11 @@ from ittools.jira.jira_ext import JiraServer, JiraEpic, JiraIssue
 class EpicReport:
     def __init__(self, opts: ReportOptions, jira: JiraServer):
         self.verbose: bool = opts.verbose
-        statuses: Dict[str, Dict[str, str]] = opts.jira_config.statuses
         self.status_order: Dict[str, int] = {
-            status["name"]: index for index, status in enumerate(statuses)
+            status["name"]: index for index, status in enumerate(opts.jira_config.statuses)
         }
         self.status_display: Dict[str, str] = {
-            status["name"]: status["display"] for index, status in enumerate(statuses)
+            status["name"]: status["display"] for index, status in enumerate(opts.jira_config.statuses)
         }
         self.jira = jira
 

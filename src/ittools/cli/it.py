@@ -3,13 +3,13 @@ import os
 import sys
 import webbrowser
 from datetime import date
-from typing import List
+from typing import Any, List
 
 import click
 from jira.exceptions import JIRAError
 
 from ittools.cfd.cfd_db import store_project_counts
-from ittools.config import load_issue_tracker_config, ReportOptions
+from ittools.config import IssueTrackerConfig, ReportOptions
 from ittools.domain.project import Project
 from ittools.jira.jira_ext import JiraServer, JiraEpic
 from ittools.reports.report_epics import EpicReport
@@ -22,12 +22,12 @@ from ittools.reports.report_in_progress import InProgressReport
 DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 
 
-def show_version(ctx, param, value):
+def show_version(ctx: click.Context, _: Any, value: Any) -> None:
     if not value or ctx.resilient_parsing:
         return
     from ittools._version import version
-    print(f"Issue tracker tools, version {version}")
-    sys.exit(0)
+    click.echo(f"Issue tracker tools, version {version}")
+    ctx.exit()
 
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]))
@@ -47,11 +47,7 @@ def show_version(ctx, param, value):
     help="Location of config file (default: ~/issuetracker.yml)",
 )
 @click.pass_context
-def issue_tracker(
-    ctx: click.Context,
-    verbose: bool,
-    config: click.Path,
-) -> None:
+def issue_tracker(ctx: click.Context, verbose: bool, config: click.Path,) -> None:
     """Issue tracker reports and information"""
     ctx.obj = build_report_options(verbose, config)
 
@@ -60,26 +56,26 @@ def build_report_options(verbose: bool, config_file: click.Path) -> ReportOption
     config_file = config_file or os.path.expanduser(DEFAULT_CONFIG_FILE)
     if verbose:
         print(f"Using config file '{config_file}'")
-    config = load_issue_tracker_config(config_file)
+    config = IssueTrackerConfig.load(config_file)
     return ReportOptions(config, verbose)
 
 
-def load_epics(server: JiraServer, project: str, epic_keys: List[str]) -> List[JiraEpic]:
-    if project:
-        return server.query_project_epics(project)
+def load_epics(server: JiraServer, project_label: str, epic_keys: List[str]) -> List[JiraEpic]:
+    if project_label:
+        return server.query_project_epics(project_label)
     else:
         return [server.jira_epic(key) for key in epic_keys]
 
 
 @issue_tracker.command()
-@click.option("-p", "--project", default=None)
+@click.option("-p", "--project", "project_label", default=None)
 @click.argument("epic_keys", nargs=-1)
 @click.pass_context
-def epic_summary(ctx: click.Context, project: str, epic_keys: List[str]) -> None:
+def epic_summary(ctx: click.Context, project_label: str, epic_keys: List[str]) -> None:
     """Report on stories within epics."""
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
-    epics = load_epics(server, project, epic_keys)
+    epics = load_epics(server, project_label, epic_keys)
     if not epics:
         ctx.fail("Either project or epic key(s) must be specified")
     EpicReport(options, server).run(epics)
@@ -113,7 +109,7 @@ def add_fix_version(
 
 @issue_tracker.command()
 @click.option(
-    "-o", "--open", is_flag=True, default=False, help="Open issue in a web browser"
+    "-o", "--open", "open_issue", is_flag=True, default=False, help="Open issue in a web browser"
 )
 @click.option(
     "-f",
@@ -132,7 +128,7 @@ def add_fix_version(
 @click.argument("issue_keys", nargs=-1)
 @click.pass_context
 def issue(
-    ctx: click.Context, open: bool, update_fix_version: str, summary: bool, issue_keys: List[str]
+    ctx: click.Context, open_issue: bool, update_fix_version: str, summary: bool, issue_keys: List[str]
 ) -> None:
     """Report on issue detail."""
     if not issue_keys:
@@ -141,7 +137,7 @@ def issue(
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
 
-    if open:
+    if open_issue:
         webbrowser.open(f"{options.jira_config.url}/browse/{issue_keys[0]}")
     elif update_fix_version:
         add_fix_version(server, issue_keys, update_fix_version)
@@ -189,8 +185,7 @@ def release(
     server = JiraServer(options.verbose, options.jira_config)
 
     if fix_version:
-        fix_issues = server.query_fix_version(fix_version)
-        issue_keys = [issue.key for issue in fix_issues]
+        issue_keys = [fix_issue.key for fix_issue in server.query_fix_version(fix_version)]
 
     if not issue_keys:
         sys.exit("issue keys required for release report")
@@ -263,8 +258,7 @@ def jql_label(ctx: click.Context, label: str) -> None:
     options: ReportOptions = ctx.obj
     server = JiraServer(options.verbose, options.jira_config)
     jql = f"project = DS AND type = Epic AND 'Epic Status' != Done AND labels = {label} order by key"
-    issues = server.query_jql_issues(jql)
-    keys = [issue.key for issue in issues]
+    keys = [jira_issue.key for jira_issue in server.query_jql_issues(jql)]
     print(f"'Epic Link' in ({', '.join(keys)})")
 
 

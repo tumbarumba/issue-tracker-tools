@@ -96,12 +96,13 @@ class JiraServer(IssueProvider, JIRA):
     def query_resolved_issues(
         self, from_date: str, to_date: str
     ) -> List[JiraIssue]:
-        jql = (
-            f"{self._project_query} and 'Epic Link' is not null and \
-                status in ('Done', 'Awaiting Demo') and \
-                resolved >= '{from_date}' and resolved < '{to_date}' \
-                order by resolved",
-        )
+        jql = (f"{self._project_query}"
+               f" and 'Epic Link' is not null"
+               f" and status in ('Done', 'Awaiting Demo')"
+               f" and resolved >= '{from_date}'"
+               f" and resolved < '{to_date}'"
+               f" order by resolved")
+
         return self.query_jql_issues(jql)
 
     def query_issues_in_epic(self, epic_key: str) -> List[JiraIssue]:

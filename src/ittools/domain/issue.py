@@ -36,7 +36,7 @@ class Issue(metaclass=abc.ABCMeta):
         return f"{self.__class__.__name__}({self.key})"
 
     def time_in_state(self, state_name: str) -> float:
-        durations = _durations_for(self.history)
+        durations = self._durations_for(self.history)
         matching_durations = [duration for state, duration in zip(self.history, durations) if state.name == state_name]
         return sum(matching_durations)
 
@@ -45,9 +45,9 @@ class Issue(metaclass=abc.ABCMeta):
     def history(self) -> List[IssueState]:
         pass
 
-
-def _durations_for(states: List[IssueState]):
-    start_times = [state.start_time for state in states]
-    durations = [business_days(t1, t2) for t1, t2 in zip(start_times[:-1], start_times[1:])]
-    durations.append(np.float64(0.0))  # Assume last state has zero time
-    return durations
+    @staticmethod
+    def _durations_for(states: List[IssueState]):
+        start_times = [state.start_time for state in states]
+        durations = [business_days(t1, t2) for t1, t2 in zip(start_times[:-1], start_times[1:])]
+        durations.append(np.float64(0.0))  # Assume last state has zero time
+        return durations

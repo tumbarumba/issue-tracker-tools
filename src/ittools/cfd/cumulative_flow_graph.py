@@ -9,12 +9,12 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as pyplot
 import pandas
 from matplotlib.lines import Line2D
-from pandas import DataFrame
+from pandas import DataFrame, DatetimeIndex
 
+from ittools.cfd.flow_data import FlowData, Trend
 from ittools.config import ProjectConfig
-from .flow_data import FlowData
-from ..domain.epic import Epic
-from ..domain.project import Project
+from ittools.domain.epic import Epic
+from ittools.domain.project import Project
 
 colour_schemes = {
     "sunset": {
@@ -66,18 +66,18 @@ class CumulativeFlowGraph:
         report_date: datetime.date,
         trend_period: int,
     ):
-        self.epics_dir = epics_dir
-        self.project_config = project_config
-        self.project = project
         self.png_file = png_file
-        self.report_date = report_date
-        self.trend_period = trend_period
-        self.initial_slope = project_config.initial_slope
+        self._epics_dir = epics_dir
+        self._project_config = project_config
+        self._project = project
+        self._report_date = report_date
+        self._trend_period = trend_period
+        self._initial_slope = project_config.initial_slope
 
-    def run(self, verbose: bool):
-        print(f"Cumulative Flow for project {self.project_config.name}")
+    def run(self, verbose: bool) -> None:
+        print(f"Cumulative Flow for project {self._project_config.name}")
         print(f"  time: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-        flow_data = self.load_flow_data(verbose)
+        flow_data = self._load_flow_data(verbose)
         print(f"  remaining issues: {flow_data.total[-1] - flow_data.done[-1]}")
         print("  trends (issues/day):")
         print(f"    current     {flow_data.current_trend.slope:4.1f}")
@@ -89,83 +89,90 @@ class CumulativeFlowGraph:
         print(f"    pessimistic {flow_data.pessimistic_trend.slope:4.1f}{pessimistic_date}")
         print()
 
-        self.build_graph(flow_data)
+        self._build_graph(flow_data)
 
         if verbose:
             print("\nTrend history:")
             for (date, slope) in zip(flow_data.dates[-len(flow_data.slope_history):], flow_data.slope_history):
                 print(f"  {date}: {slope:4.1f}")
 
-    def build_graph(self, flow_data):
-        colours = colour_schemes["default"]
-        legend_elements = self.generate_legend(colours, flow_data)
+    def first_data_date(self, verbose: bool) -> str:
+        flow_data = self._load_flow_data(verbose)
+        return flow_data.dates[0]
 
-        final_x_axis, final_y_axis = self.select_final_axis(flow_data)
+    def last_data_date(self, verbose: bool) -> str:
+        flow_data = self._load_flow_data(verbose)
+        return flow_data.dates[-1]
+
+    def _build_graph(self, flow_data: FlowData) -> None:
+        colours = colour_schemes["default"]
+        legend_elements = self._generate_legend(colours, flow_data)
+
+        final_x_axis, final_y_axis = self._select_final_axis(flow_data)
 
         max_scope = max(flow_data.total)
         max_y_scale = ceil(max_scope * 1.1)
 
-        self.write_stacked_area_graph(
+        self._write_stacked_area_graph(
             final_x_axis, final_y_axis, max_y_scale, legend_elements, colours
         )
-        self.write_current_trend_line(final_x_axis, flow_data, colours)
-        self.write_optimistic_trend_line(final_x_axis, flow_data, colours)
-        self.write_pessimistic_trend_line(final_x_axis, flow_data, colours)
+        self._write_current_trend_line(final_x_axis, flow_data, colours)
+        self._write_optimistic_trend_line(final_x_axis, flow_data, colours)
+        self._write_pessimistic_trend_line(final_x_axis, flow_data, colours)
         end_date = flow_data.pessimistic_completion_date
         if end_date:
-            self.write_milestone_dates(
+            self._write_milestone_dates(
                 max(flow_data.total), final_x_axis, end_date, colours
             )
-        self.set_plot_size()
+        self._set_plot_size()
 
         pyplot.gcf().canvas.draw()
 
-        self.save_graph()
+        self._save_graph()
 
-    def load_flow_data(self, verbose: bool):
-        epic_datas = [self._load_epic_data(epic, verbose) for epic in self.project.epics]
-        project_data = reduce(CumulativeFlowGraph._combine_progress_data, epic_datas)
+    def _load_flow_data(self, verbose: bool) -> FlowData:
+        epic_datas = [self._load_epic_data(epic, verbose) for epic in self._project.epics]
+        project_data = reduce(self._combine_progress_data, epic_datas)
         return FlowData(
             data_frame=project_data,
-            today=self.report_date,
-            trend_period=self.trend_period,
-            initial_slope=self.initial_slope)
+            today=self._report_date,
+            trend_period=self._trend_period,
+            initial_slope=self._initial_slope)
 
     def _load_epic_data(self, epic: Epic, verbose: bool) -> DataFrame:
-        csv_file = f"{self.epics_dir}/{epic.key}/progress.csv"
+        csv_file = f"{self._epics_dir}/{epic.key}/progress.csv"
         if verbose:
             print(f"Reading progress from {csv_file}")
         return pandas.read_csv(csv_file, usecols=["date", "pending", "in_progress", "done", "total"], index_col="date")
 
-    @classmethod
-    def _combine_progress_data(cls, left: DataFrame, right: DataFrame) -> DataFrame:
+    @staticmethod
+    def _combine_progress_data(left: DataFrame, right: DataFrame) -> DataFrame:
         return left.combine(right, lambda left_cell, right_cell: left_cell + right_cell, fill_value=0)
 
-    def select_final_axis(self, flow_data):
+    def _select_final_axis(self, flow_data: FlowData) -> tuple[DatetimeIndex, list[list[int]]]:
         start_date = flow_data.dates[0]
-        end_date = self.calc_end_date(flow_data)
+        end_date = self._calc_end_date(flow_data)
 
         final_x_axis = pandas.date_range(start_date, end_date).date.tolist()
 
         required_size = len(final_x_axis)
         final_y_axis = [
-            self.normalise_series(flow_data.done, required_size),
-            self.normalise_series(flow_data.in_progress, required_size),
-            self.normalise_series(flow_data.pending, required_size),
+            self._normalise_series(flow_data.done, required_size),
+            self._normalise_series(flow_data.in_progress, required_size),
+            self._normalise_series(flow_data.pending, required_size),
         ]
         return final_x_axis, final_y_axis
 
-    @property
-    def final_milestone_date(self):
-        if not self.project_config.milestones:
+    def _final_milestone_date(self) -> str | None:
+        if not self._project_config.milestones:
             return None
 
-        final_milestone = self.project_config.milestones[-1]
+        final_milestone = self._project_config.milestones[-1]
         return final_milestone["date"]
 
-    def calc_end_date(self, flow_data):
-        milestone_date = self.final_milestone_date
-        predicted_end_date = self.last_milestone_or_end_date(flow_data, milestone_date)
+    def _calc_end_date(self, flow_data):
+        milestone_date = self._final_milestone_date()
+        predicted_end_date = self._last_milestone_or_end_date(flow_data, milestone_date)
         if not milestone_date:
             # No milestones define, just go to the predicted end date
             return predicted_end_date + timedelta(days=2)
@@ -177,21 +184,23 @@ class CumulativeFlowGraph:
             end_date = milestone_date + timedelta(days=15)
         return end_date
 
-    def last_milestone_or_end_date(self, flow_data, milestone_date):
+    @staticmethod
+    def _last_milestone_or_end_date(flow_data, milestone_date):
         return (
             flow_data.pessimistic_completion_date
             or flow_data.optimistic_completion_date
             or milestone_date
         )
 
-    def normalise_series(self, series_values, required_size):
+    @staticmethod
+    def _normalise_series(series_values: list[int], required_size: int) -> list[int]:
         result = series_values[:]
         while len(result) < required_size:
             result.append(series_values[-1])
 
         return result
 
-    def generate_legend(self, colours, flow_data):
+    def _generate_legend(self, colours, flow_data):
         """generates a list of all the information need to show the legend"""
         # Manual list of stackplot legend elements.
         legend_elements = [
@@ -202,7 +211,7 @@ class CumulativeFlowGraph:
                 [0],
                 [0],
                 color=colours["Current Date"],
-                label=f"{self.report_date} (Today)",
+                label=f"{self._report_date} (Today)",
             ),
         ]
         if flow_data.optimistic_completion_date:
@@ -223,7 +232,7 @@ class CumulativeFlowGraph:
                     label=f"{flow_data.pessimistic_completion_date} (Pessimistic End)",
                 )
             )
-        for milestone in self.project_config.milestones:
+        for milestone in self._project_config.milestones:
             legend_elements.append(
                 Line2D(
                     [0],
@@ -235,7 +244,7 @@ class CumulativeFlowGraph:
 
         return legend_elements
 
-    def write_stacked_area_graph(
+    def _write_stacked_area_graph(
         self, final_x_axis, final_y_axis, max_y_scale, legend_elements, colours
     ):
         """All formatting graph visuals"""
@@ -249,36 +258,36 @@ class CumulativeFlowGraph:
         pyplot.xlabel("Dates", labelpad=12, fontsize=12)
         pyplot.ylabel("Total Stories", labelpad=9, fontsize=12)
         pyplot.ylim([0, max_y_scale])
-        pyplot.title(self.project_config.name, pad=9, fontsize=16)
+        pyplot.title(self._project_config.name, pad=9, fontsize=16)
         pyplot.gca().margins(0, 0)
 
-    def write_current_trend_line(self, final_x_axis, flow_data, colours):
+    def _write_current_trend_line(self, final_x_axis: DatetimeIndex, flow_data: FlowData, colours: dict[str, str]):
         """Plots linear regression line"""
-        start_date = self.report_date + timedelta(days=-flow_data.trend_period + 1)
+        start_date = self._report_date + timedelta(days=-flow_data.trend_period + 1)
         if start_date < final_x_axis[0]:
             start_date = final_x_axis[0]
-        end_date = self.report_date
-        self.write_trend_line(
-            final_x_axis, colours, start_date, end_date, flow_data.current_trend
-        )
+        end_date = self._report_date
+        self._write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.current_trend)
 
-    def write_optimistic_trend_line(self, final_x_axis, flow_data, colours):
+    def _write_optimistic_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.report_date
+        start_date = self._report_date
         end_date = final_x_axis[-1]
-        self.write_trend_line(
-            final_x_axis, colours, start_date, end_date, flow_data.optimistic_trend
-        )
+        self._write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.optimistic_trend)
 
-    def write_pessimistic_trend_line(self, final_x_axis, flow_data, colours):
+    def _write_pessimistic_trend_line(self, final_x_axis, flow_data, colours):
         """Plots linear regression line"""
-        start_date = self.report_date
+        start_date = self._report_date
         end_date = final_x_axis[-1]
-        self.write_trend_line(
-            final_x_axis, colours, start_date, end_date, flow_data.pessimistic_trend
-        )
+        self._write_trend_line(final_x_axis, colours, start_date, end_date, flow_data.pessimistic_trend)
 
-    def write_trend_line(self, final_x_axis, colours, start_date, end_date, trend):
+    @staticmethod
+    def _write_trend_line(
+            final_x_axis: DatetimeIndex,
+            colours: dict[str, str],
+            start_date: datetime.date,
+            end_date: datetime.date,
+            trend: Trend) -> None:
         """Plots linear regression line"""
         trend_dates = pandas.date_range(start_date, end_date).date.tolist()
 
@@ -289,33 +298,33 @@ class CumulativeFlowGraph:
         y_values = trend.slope * x_values + trend.intercept
         pyplot.plot(trend_dates, y_values, color=colours["Trendline"])
 
-    def write_milestone_dates(
+    def _write_milestone_dates(
         self, max_total, final_x_axis, predicted_end_date, colours
     ):
         """checks for existence of data + calls writing func"""
-        self.write_date_line(max_total, self.report_date, colours["Current Date"])
-        if self.project_config.milestones is not None:
-            for i in range(len(self.project_config.milestones)):
-                milestone = self.project_config.milestones[i]
+        self._write_date_line(max_total, self._report_date, colours["Current Date"])
+        if self._project_config.milestones is not None:
+            for i in range(len(self._project_config.milestones)):
+                milestone = self._project_config.milestones[i]
                 if milestone["date"] in final_x_axis:
-                    self.write_date_line(
+                    self._write_date_line(
                         max_total, milestone["date"], colours["Milestone"]
                     )
                 else:
                     sys.exit(f'Error: Milestone "{milestone["date"]}" has no date.')
 
         if predicted_end_date in final_x_axis:
-            self.write_date_line(
+            self._write_date_line(
                 max_total, predicted_end_date, colours["Predicted End Date"]
             )
 
-    def write_date_line(self, max_total, x_axis_position_index, line_color):
+    def _write_date_line(self, max_total, x_axis_position_index, line_color):
         """plots date lines"""
         pyplot.vlines(
             x_axis_position_index, 0, max_total + (max_total / 6), color=line_color
         )
 
-    def set_plot_size(self):
+    def _set_plot_size(self):
         figure = pyplot.gcf()
 
         figure.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
@@ -324,15 +333,7 @@ class CumulativeFlowGraph:
         new_height = new_width / 16 * 9
         figure.set_size_inches(new_width, new_height)
 
-    def save_graph(self):
+    def _save_graph(self):
         """saves graph, creates file locations if necessary"""
         pyplot.savefig(self.png_file)
         print(f"Cumulative flow graph saved as {self.png_file}")
-
-    def first_data_date(self, verbose: bool) -> str:
-        flow_data = self.load_flow_data(verbose)
-        return flow_data.dates[0]
-
-    def last_data_date(self, verbose: bool) -> str:
-        flow_data = self.load_flow_data(verbose)
-        return flow_data.dates[-1]

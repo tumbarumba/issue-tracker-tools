@@ -5,7 +5,7 @@ import yaml
 
 
 REPORT_DIR_DEFAULT = "~/jirareports"
-DEFAULT_STATUSES = [
+DEFAULT_STATUSES: list[dict[str, str]] = [
     {"display": "B", "name": "Backlog"},
     {"display": "🔵", "name": "Selected for Development"},
     {"display": "🌑", "name": "Ready for Development"},
@@ -17,7 +17,7 @@ DEFAULT_STATUSES = [
     {"display": "C", "name": "Closed"},
     {"display": "D", "name": "Duplicate"},
 ]
-DEFAULT_ISSUE_TYPES = [
+DEFAULT_ISSUE_TYPES: list[dict[str, str]] = [
     {"display": "📖", "name": "Story"},
     {"display": "🐞", "name": "Bug"},
     {"display": "🔧", "name": "Task"},
@@ -25,22 +25,28 @@ DEFAULT_ISSUE_TYPES = [
 
 
 class IssueTrackerConfig:
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]) -> None:
         self.provider = config.get("provider", "jira")
         self.report_dir = os.path.expanduser(
             config.get("report_dir", REPORT_DIR_DEFAULT)
         )
         self.jira_config = JiraConfig(config["jira"])
-        self.teams = config.get("teams", dict())
+        self.teams = config.get("teams", {})
+
+    @classmethod
+    def load(cls, config_file: str) -> IssueTrackerConfig:
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+            return IssueTrackerConfig(config)
 
 
 class JiraConfig:
-    def __init__(self, jira_config: Dict[str, Any]):
+    def __init__(self, jira_config: Dict[str, Any]) -> None:
         self.url: str = jira_config["url"]
-        self.statuses: Dict[str, Dict[str, str]] = jira_config.get(
+        self.statuses: list[dict[str, str]] = jira_config.get(
             "statuses", DEFAULT_STATUSES
         )
-        self.issuetypes: Dict[str, Dict[str, str]] = jira_config.get(
+        self.issuetypes: list[dict[str, str]] = jira_config.get(
             "issuetypes", DEFAULT_ISSUE_TYPES
         )
         project_keys = jira_config.get("project_keys", [])
@@ -52,11 +58,17 @@ class JiraConfig:
 
 
 class ProjectConfig:
-    def __init__(self, project_config: Dict[str, Any]):
+    def __init__(self, project_config: dict[str, Any]) -> None:
         self.name: str = project_config.get("name", "Unnamed Project")
         self.key: str = project_config.get("key", "(none)")
         self.milestones: List[Dict[str, Any]] = project_config.get("milestones", [])
         self.initial_slope: float = project_config.get("initial_slope", 1.0)
+
+    @classmethod
+    def load(cls, config_file: str) -> ProjectConfig:
+        with open(config_file, "r") as file:
+            config = yaml.safe_load(file)
+            return ProjectConfig(config.get("project"))
 
 
 class ReportOptions(object):
@@ -64,20 +76,8 @@ class ReportOptions(object):
         self,
         issue_tracker_config: IssueTrackerConfig,
         verbose: bool = False,
-    ):
+    ) -> None:
         self.jira_config = issue_tracker_config.jira_config
         self.report_dir = issue_tracker_config.report_dir
         self.teams = issue_tracker_config.teams
         self.verbose: bool = verbose
-
-
-def load_issue_tracker_config(config_file: str) -> IssueTrackerConfig:
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        return IssueTrackerConfig(config)
-
-
-def load_project_config(config_file: str) -> ProjectConfig:
-    with open(config_file, "r") as file:
-        config = yaml.safe_load(file)
-        return ProjectConfig(config.get("project"))

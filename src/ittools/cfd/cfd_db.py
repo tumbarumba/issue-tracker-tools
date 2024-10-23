@@ -23,14 +23,14 @@ def store_project_counts(
 def store_epic_counts(
     count_date: str, epic: Epic, options: ReportOptions
 ) -> None:
-    csv_path = get_epic_progress_csv_path(options, epic.key)
-    csv_data = read_csv_data(csv_path)
-    add_missing_dates(csv_data, count_date)
+    csv_path = _get_epic_progress_csv_path(options, epic.key)
+    csv_data = _read_csv_data(csv_path)
+    _add_missing_dates(csv_data, count_date)
     csv_data[count_date] = epic.issue_counts
-    write_csv_data(csv_path, epic.key, csv_data)
+    _write_csv_data(csv_path, epic.key, csv_data)
 
 
-def get_epic_progress_csv_path(options: ReportOptions, epic_key: str) -> Path:
+def _get_epic_progress_csv_path(options: ReportOptions, epic_key: str) -> Path:
     report_path = Path(options.report_dir)
     epic_report_path = report_path / "epics" / epic_key
     if not epic_report_path.exists():
@@ -39,28 +39,26 @@ def get_epic_progress_csv_path(options: ReportOptions, epic_key: str) -> Path:
     return epic_report_path / PROGRESS_CSV
 
 
-def read_csv_data(csv_path: Path) -> Dict[str, IssueCounts]:
+def _read_csv_data(csv_path: Path) -> Dict[str, IssueCounts]:
     csv_data = dict()
 
     if csv_path.exists():
         with csv_path.open("r", encoding="UTF8") as f:
             csv_reader = csv.DictReader(f)
             for row in csv_reader:
-                csv_data[row["date"]] = counts_from_row(row)
+                csv_data[row["date"]] = _counts_from_row(row)
 
     return csv_data
 
 
-def counts_from_row(row: Dict[str, str]) -> IssueCounts:
+def _counts_from_row(row: Dict[str, str]) -> IssueCounts:
     pending = int(row["pending"])
     in_progress = int(row["in_progress"])
     done = int(row["done"])
     return IssueCounts(pending, in_progress, done)
 
 
-def write_csv_data(
-    csv_path: Path, epic_key: str, csv_data: Dict[str, IssueCounts]
-) -> None:
+def _write_csv_data(csv_path: Path, epic_key: str, csv_data: Dict[str, IssueCounts]) -> None:
     with csv_path.open("w", encoding="UTF8") as f:
         field_names = ["date", "epic", "pending", "in_progress", "done", "total"]
         csv_writer = csv.DictWriter(f, fieldnames=field_names)
@@ -79,7 +77,7 @@ def write_csv_data(
             )
 
 
-def add_missing_dates(csv_data: Dict[str, IssueCounts], date_to_add_str: str) -> None:
+def _add_missing_dates(csv_data: Dict[str, IssueCounts], date_to_add_str: str) -> None:
     if not csv_data:
         return
 
