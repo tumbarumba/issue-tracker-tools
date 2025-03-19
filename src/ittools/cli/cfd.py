@@ -1,5 +1,7 @@
 #! /usr/bin/env python
+import traceback
 from functools import reduce
+from pathlib import Path
 
 import click
 import os
@@ -37,6 +39,7 @@ DEFAULT_CONFIG_FILE = "~/issuetracker.yml"
 )
 @click.option("-p", "--project-label", "--project", help="Project label")
 @click.option("-e", "--epic", help="Epic key")
+@click.option("-x", "--excel", type=click.Path(), help="Excel file")
 @click.option("-f", "--show-first-date", is_flag=True, help="Show first date in report data")
 @click.option("-l", "--show-last-date", is_flag=True, help="Show last date in report data")
 @click.option("-c", "--config", type=click.Path(exists=True))
@@ -47,6 +50,7 @@ def cfd(
     days: click.INT,
     project_label: str,
     epic: str,
+    excel: click.Path,
     show_first_date: bool,
     show_last_date: bool,
     config: click.Path,
@@ -58,12 +62,12 @@ def cfd(
     Requires a project progress file (progress.csv) in the project directory. This is normally generated
     by the `it project` command
     """
-    if not (project_label or epic):
+    if not (project_label or epic or excel):
         click.get_current_context().fail("one of project label or epic must be specified")
     if project_label and epic:
         click.get_current_context().fail("only one of project label or epic can be specified")
 
-    cfd_report = _make_cfd_report(config, days, epic, project_label, today, verbose)
+    cfd_report = _make_cfd_report(config, days, epic, project_label, excel, today, verbose)
     if show_first_date:
         print(cfd_report.first_data_date())
     elif show_last_date:
@@ -79,16 +83,35 @@ def _make_cfd_report(
         trend_period: int,
         epic_key: str,
         project_label: str,
+        excel_file: click.Path,
         today: click.DateTime,
         verbose: bool
 ) -> CumulativeFlowGraph:
+    report_date = _date_option_or_today(today)
+    if excel_file:
+        return _make_excel_cfd(excel_file, report_date, verbose)
+
     config = _make_it_config(verbose, config_path)
     jira_server = JiraServer(verbose, config.jira_config)
-    report_date = _date_option_or_today(today)
     if project_label:
         return _make_project_cfd(project_label, trend_period, config.report_dir, jira_server, report_date, verbose)
     else:
         return _make_epic_cfd(epic_key, trend_period, config.report_dir, jira_server, report_date, verbose)
+
+
+def _make_excel_cfd(excel_file: click.Path, report_date: datetime.date, verbose: bool) -> CumulativeFlowGraph:
+    if verbose:
+        print(f"Reading progress from {excel_file}")
+    data_frame = pandas.read_excel(excel_file)
+    flow_data = FlowData(
+        data_frame=data_frame,
+        today=report_date,
+        trend_period=FlowData.DEFAULT_TREND_PERIOD,
+        initial_slope=FlowData.DEFAULT_SLOPE
+    )
+    project_config = ProjectConfig({"name": os.path.basename(str(excel_file))})
+    png_file = Path(str(excel_file)).parent / f"cfd-{str(report_date)}.png"
+    return CumulativeFlowGraph(flow_data, project_config, str(png_file), report_date)
 
 
 def _make_project_cfd(
@@ -181,5 +204,6 @@ if __name__ == "__main__":
         cfd()
         sys.exit(0)
     except Exception as e:
+        print(traceback.format_exc())
         sys.stderr.write(f"Command failed: {getattr(e, 'message', repr(e))}")
         sys.exit(1)

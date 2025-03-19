@@ -26,6 +26,7 @@ dependencies = [
   "PyYAML",
   "matplotlib",
   "numpy",
+  "openpyxl",
   "yq"
 ]
 dynamic = ["version"]
