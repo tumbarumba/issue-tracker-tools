@@ -84,7 +84,9 @@ class CumulativeFlowGraph:
 
         if verbose:
             print("\nTrend history:")
-            for (date, slope) in zip(self._flow_data.dates[-len(self._flow_data.slope_history):], self._flow_data.slope_history):
+            slopes = self._flow_data.slope_history
+            dates = self._flow_data.dates[-len(slopes):]
+            for (date, slope) in zip(dates, slopes):
                 print(f"  {date}: {slope:4.1f}")
 
     def first_data_date(self) -> str:
