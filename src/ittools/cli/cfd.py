@@ -1,13 +1,19 @@
 #! /usr/bin/env python
+from functools import reduce
+
 import click
 import os
 import os.path
 import datetime
 import sys
 
+import pandas
+from pandas import DataFrame
+
 from ittools.cfd.flow_data import FlowData
 from ittools.config import IssueTrackerConfig, ProjectConfig
 from ittools.cfd.cumulative_flow_graph import CumulativeFlowGraph
+from ittools.domain.epic import Epic
 from ittools.domain.project import Project
 from ittools.jira.jira_ext import JiraServer
 
@@ -59,9 +65,9 @@ def cfd(
 
     cfd_report = _make_cfd_report(config, days, epic, project_label, today, verbose)
     if show_first_date:
-        print(cfd_report.first_data_date(verbose))
+        print(cfd_report.first_data_date())
     elif show_last_date:
-        print(cfd_report.last_data_date(verbose))
+        print(cfd_report.last_data_date())
     else:
         cfd_report.run(verbose)
         if open_graph:
@@ -95,8 +101,15 @@ def _make_project_cfd(
 ) -> CumulativeFlowGraph:
     project_config = _make_project_config(verbose, report_dir, project_label)
     project = Project.load(jira_server, project_label)
+    data_frame = _data_frame_from_project(project, f"{report_dir}/epics", verbose)
+    flow_data = FlowData(
+        data_frame=data_frame,
+        today=report_date,
+        trend_period=trend_period,
+        initial_slope=project_config.initial_slope
+    )
     png_file = f"{report_dir}/{project_label}/cfd-{str(report_date)}.png"
-    return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, trend_period)
+    return CumulativeFlowGraph(flow_data, project_config, png_file, report_date)
 
 
 def _make_epic_cfd(
@@ -110,8 +123,15 @@ def _make_epic_cfd(
     jira_epic = jira_server.jira_epic(epic_key)
     project_config = _make_project_config(verbose, report_dir, f"{epic_key}: {jira_epic.summary}")
     project = Project(epic_key, [jira_epic])
+    data_frame = _data_frame_from_project(project, f"{report_dir}/epics", verbose)
+    flow_data = FlowData(
+        data_frame=data_frame,
+        today=report_date,
+        trend_period=trend_period,
+        initial_slope=project_config.initial_slope
+    )
     png_file = f"{report_dir}/epics/{epic_key}/cfd-{str(report_date)}.png"
-    return CumulativeFlowGraph(f"{report_dir}/epics", project_config, project, png_file, report_date, trend_period)
+    return CumulativeFlowGraph(flow_data, project_config, png_file, report_date)
 
 
 def _make_it_config(verbose: bool, config_file: click.Path) -> IssueTrackerConfig:
@@ -131,6 +151,23 @@ def _make_project_config(verbose: bool, report_dir: str, project_label: str) -> 
         if verbose:
             print(f"Project config file missing ('{config_file}'), using default")
         return ProjectConfig({"name": project_label, "key": project_label, })
+
+
+def _data_frame_from_project(project: Project, epics_dir: str, verbose: bool) -> DataFrame:
+    epic_datas = [_load_epic_data(epic, epics_dir, verbose) for epic in project.epics]
+    project_data = reduce(_combine_progress_data, epic_datas)
+    return project_data
+
+
+def _load_epic_data(self, epic: Epic, epics_dir: str, verbose: bool) -> DataFrame:
+    csv_file = f"{epics_dir}/{epic.key}/progress.csv"
+    if verbose:
+        print(f"Reading progress from {csv_file}")
+    return pandas.read_csv(csv_file, usecols=["date", "pending", "in_progress", "done", "total"], index_col="date")
+
+
+def _combine_progress_data(left: DataFrame, right: DataFrame) -> DataFrame:
+    return left.combine(right, lambda left_cell, right_cell: left_cell + right_cell, fill_value=0)
 
 
 def _date_option_or_today(option: click.DateTime) -> datetime.date:
