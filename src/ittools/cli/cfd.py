@@ -59,10 +59,12 @@ def cfd(
     open_graph: bool,
     verbose: bool
 ) -> None:
-    """Create a cumulative flow diagram for a given project
+    """Create a cumulative flow diagram for a given project or progress report.
 
-    Requires a project progress file (progress.csv) in the project directory. This is normally generated
-    by the `it project` command
+    Use `--csv` or `--excel` options to generate a cdf directly from a progress report.
+
+    Use `--project` or `--epic` options if creating a cfd from the output of the `it project` command
+    (Jira will need configured).
     """
     if not (project_label or epic or excel or csv):
         click.get_current_context().fail("one of project label, epic, csv, or excel must be specified")
