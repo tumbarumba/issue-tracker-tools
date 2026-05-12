@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from dateutil.parser import isoparse
 from math import ceil
 from typing import List
@@ -15,7 +15,7 @@ class FlowData:
     DEFAULT_SLOPE = numpy.float64(1.0)
 
     def __init__(self, data_frame: pandas.DataFrame,
-                 today: datetime.date,
+                 today: date,
                  trend_period: int | None = None,
                  initial_slope: float | None = None):
         self.today = today
@@ -32,7 +32,7 @@ class FlowData:
         self.pessimistic_trend = self._calculate_pessimistic_trend()
 
     @staticmethod
-    def _load_dates(data_frame, last_date) -> list[datetime.date]:
+    def _load_dates(data_frame, last_date) -> list[date]:
         all_dates = [isoparse(date_str).date() for date_str in data_frame["date"].tolist()]
         last_index = all_dates.index(last_date)
         return all_dates[: last_index + 1]
@@ -79,20 +79,21 @@ class FlowData:
         final_scope = self.total[-1]
         return ceil((final_scope - trend.intercept) / trend.slope)
 
-    def _predicted_end_date(self, trend: Trend) -> datetime.date:
+    def _predicted_end_date(self, trend: Trend) -> date | None:
         end_index = self._predicted_end_index(trend)
         if not end_index:
             return None
+        num_days: int = end_index
 
         start_date = self.dates[0]
-        return start_date + timedelta(days=self._predicted_end_index(trend))
+        return start_date + timedelta(days=num_days)
 
     @property
-    def optimistic_completion_date(self) -> datetime.date:
+    def optimistic_completion_date(self) -> date | None:
         return self._predicted_end_date(self.optimistic_trend)
 
     @property
-    def pessimistic_completion_date(self) -> datetime.date:
+    def pessimistic_completion_date(self) -> date | None:
         return self._predicted_end_date(self.pessimistic_trend)
 
 

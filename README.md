@@ -13,26 +13,19 @@ These tools are described in more detail below.
 
 Clone the repository:
 
-```commandline
+```shell
 git clone https://github.com/tumbarumba/issue-tracker-tools.git
 cd issue-tracker-tools
 ```
 
+Set up your Python environment using uv
 
-Setup your Python environment (a virtualenv is preferred). For example, the standard `venv`
-module can be set up like this:
+```shell
+# Set up virtual env and sync dependencies
+uv sync --all-extras
 
-```commandline
-# Create a new virtual environment under the `.venv` directory
-python -m venv .venv
 # Activate the virtual environment for the current shell
 . .venv/bin/activate
-```
-
-Install the dependencies:
-
-```
-pip install -e '.[dev,test]'
 ```
 
 Once installed locally, you can build a wheel for downstream distribution:
@@ -54,7 +47,7 @@ The `it` and `cfd` scripts requires a configuration file, called `issuetracker.y
 
 ### `issuetracker.yml`
 
-The scripts will look for this file at `$HOME/issuetracker.yml` by default, although this can be overriden on the command line using the `-c` or `--config` option.
+The scripts will look for this file at `$HOME/issuetracker.yml` by default, although this can be overridden on the command line using the `-c` or `--config` option.
 
 An example of the config file:
 
