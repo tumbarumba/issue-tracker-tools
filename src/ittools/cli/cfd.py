@@ -206,7 +206,7 @@ def _data_frame_from_project(project: Project, epics_dir: str, verbose: bool) ->
     return project_data
 
 
-def _load_epic_data(self, epic: Epic, epics_dir: str, verbose: bool) -> DataFrame:
+def _load_epic_data(epic: Epic, epics_dir: str, verbose: bool) -> DataFrame:
     csv_file = f"{epics_dir}/{epic.key}/progress.csv"
     if verbose:
         print(f"Reading progress from {csv_file}")

@@ -33,7 +33,7 @@ class FlowData:
 
     @staticmethod
     def _load_dates(data_frame, last_date) -> list[date]:
-        all_dates = [isoparse(date_str).date() for date_str in data_frame["date"].tolist()]
+        all_dates = [isoparse(date_str).date() for date_str in list(data_frame.index)]
         last_index = all_dates.index(last_date)
         return all_dates[: last_index + 1]
 
